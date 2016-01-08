@@ -16,11 +16,11 @@ import (
 )
 
 func main() {
-	app := app.NewApp("Goth example app v0.1")
+	app := app.NewApp("Goth example app v0.1.0")
 
 	ps := database.ConnectionParams{
 		"url":      getMongoURI(),
-		"database": "stock_holmes",
+		"database": "goth",
 	}
 	conn, err := mongodb.NewConnection(ps, database.NewResourceMap())
 	if err != nil {

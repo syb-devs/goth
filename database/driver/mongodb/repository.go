@@ -61,7 +61,7 @@ func (r *Repository) Delete(d database.Resource) error {
 
 	delColName, err := r.Conn.Map().DeletedColFor(d)
 	if err != nil {
-		return nil
+		return err
 	}
 	if delColName == "" {
 		return r.Conn.C(colName).RemoveId(d.GetID())
@@ -71,7 +71,11 @@ func (r *Repository) Delete(d database.Resource) error {
 		// Logic delete
 		td.MarkDeleted()
 	}
-	return r.Conn.C(delColName).Insert(d)
+	err = r.Conn.C(delColName).Insert(d)
+	if err != nil {
+		return err
+	}
+	return r.Conn.C(colName).RemoveId(d.GetID())
 }
 
 // Get retrieves a resource from the database and stores in the given type

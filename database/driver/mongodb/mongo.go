@@ -72,8 +72,8 @@ func (c *Conn) Map() *database.ResourceMap {
 
 // Resource implements the Resource interface for MongoDB
 type Resource struct {
-	ID          bson.ObjectId `json:"id" bson:"_id"`
-	time.Stamps `json:",inline" bson:",inline"`
+	ID                bson.ObjectId `json:"id" bson:"_id"`
+	time.DeleteStamps `json:",inline" bson:",inline"`
 }
 
 // SetID sets the ID for the resource
