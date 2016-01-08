@@ -26,7 +26,6 @@ type ResourceConfig struct {
 }
 
 func RegisterResource(a *app.App, conf ResourceConfig) error {
-	fmt.Printf("regiter resource %s HTTP\n", conf.Name)
 	pName := conf.URLName
 	if pName == "" {
 		panic(fmt.Sprintf("empty path name for resource %s", conf.Name))
@@ -34,8 +33,6 @@ func RegisterResource(a *app.App, conf ResourceConfig) error {
 	URL := fmt.Sprintf("/%s", pName)
 	URLWithID := fmt.Sprintf("/%s/:id", pName)
 	rh := conf.Handler
-
-	fmt.Println("register CRUD routes")
 
 	// Register CRUD routes for Resource
 	a.Handle("POST", URL, app.HandlerFunc(rh.Create))
@@ -45,11 +42,9 @@ func RegisterResource(a *app.App, conf ResourceConfig) error {
 	a.Handle("GET", URL, app.HandlerFunc(rh.List))
 
 	if rp, ok := rh.(app.RouteProvider); ok {
-		fmt.Println("register custom routes")
 		// Register any extra routes defined by the ResourceHandler
 		rp.RegisterRoutes(a)
 	}
-
 	return nil
 }
 

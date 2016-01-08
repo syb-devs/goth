@@ -1,7 +1,5 @@
 package database
 
-//TODO(zareone) Move to mongodb package, as the resource map is an implementation detail
-
 import (
 	"errors"
 	"fmt"
@@ -11,7 +9,7 @@ import (
 
 var (
 	ErrTypeNotRegistered = errors.New("type not registered")
-	ErrNilResource       = errors.New("resource must be addressable (not nil)")
+	ErrNilResource       = errors.New("model type must be addressable (not nil)")
 )
 
 // ResourceMap maintains a relationship of Resource types and their respective table/collections for persistence
@@ -44,9 +42,6 @@ func (m *ResourceMap) RegisterResource(t interface{}, col string, deletedCol str
 
 // ColFor returns the name of the collection / table registered for the given type
 func (m *ResourceMap) ColFor(t interface{}) (string, error) {
-	if t == nil {
-		return "", ErrNilResource
-	}
 	colData, err := m.findByType(t)
 	if err != nil {
 		return "", err
@@ -67,11 +62,13 @@ func (m *ResourceMap) DeletedColFor(t interface{}) (string, error) {
 func (m *ResourceMap) findByType(t interface{}) (ResourceMapItem, error) {
 	var ret ResourceMapItem
 
+	if t == nil {
+		return ret, ErrNilResource
+	}
 	tt, err := m.toType(t)
 	if err != nil {
 		return ret, err
 	}
-
 	if c, ok := m.cols[tt]; ok {
 		return c, nil
 	}
