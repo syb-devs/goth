@@ -36,8 +36,12 @@ func (h *userHandler) RegisterRoutes(r app.Router) error {
 	sm := app.SkipMiddleware
 
 	r.Handle("POST", "/users/register", sm(app.HandlerFunc(h.register), "jwt"))
-	r.Handle("POST", "/users/login", sm(app.HandlerFunc(h.login), "jwt"))
+	r.Handle("POST", "/users/sessions", sm(app.HandlerFunc(h.login), "jwt"))
 	return nil
+}
+
+type retJWT struct {
+	Token string `json:"token"`
 }
 
 func (h *userHandler) register(w http.ResponseWriter, r *http.Request, ctx *app.Context) error {
@@ -57,7 +61,7 @@ func (h *userHandler) register(w http.ResponseWriter, r *http.Request, ctx *app.
 	if err != nil {
 		return err
 	}
-	return h.Encode(w, jwt)
+	return h.Encode(w, retJWT{jwt})
 }
 
 func (h *userHandler) login(w http.ResponseWriter, r *http.Request, ctx *app.Context) error {
@@ -78,7 +82,7 @@ func (h *userHandler) login(w http.ResponseWriter, r *http.Request, ctx *app.Con
 	if err != nil {
 		return err
 	}
-	return h.Encode(w, jwt)
+	return h.Encode(w, retJWT{jwt})
 }
 
 type reqUser struct {
