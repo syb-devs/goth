@@ -4,7 +4,6 @@ import (
 	"encoding/gob"
 
 	"bitbucket.org/syb-devs/goth/database"
-	"github.com/syb-devs/gotools/time"
 
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -73,7 +72,7 @@ func (c *Conn) Map() *database.ResourceMap {
 // Resource implements the Resource interface for MongoDB
 type Resource struct {
 	ID                bson.ObjectId `json:"id" bson:"_id"`
-	time.DeleteStamps `json:",inline" bson:",inline"`
+	database.DeleteTS `json:",inline" bson:",inline"`
 }
 
 // SetID sets the ID for the resource
