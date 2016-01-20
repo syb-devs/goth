@@ -70,7 +70,7 @@ func (h *userHandler) login(w http.ResponseWriter, r *http.Request, ctx *app.Con
 		return err
 	}
 	user := &User{}
-	query := database.NewQ(QueryByUsername(rUser.Username))
+	query := database.NewQ(QueryLogin(rUser.Username))
 	err = ctx.App.DB.FindOne(user, query)
 	if err != nil {
 		return err

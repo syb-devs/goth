@@ -12,6 +12,7 @@ type User struct {
 	auth.Auth        `bson:",inline"`
 	FirstName        string `bson:"firstName" json:"firstName"`
 	LastName         string `bson:"lastName" json:"lastName"`
+	Active           bool   `bson:"active" json:"-"`
 }
 
 type userDispatcher struct{}
@@ -22,4 +23,9 @@ func (d *userDispatcher) NewList() database.ResourceList { return &[]*User{} }
 // QueryByUsername returns a user, querying by username, or error if not found
 func QueryByUsername(username string) database.Dict {
 	return database.Dict{"username": username}
+}
+
+// QueryLogin returns a user, querying by username, or error if not found
+func QueryLogin(username string) database.Dict {
+	return database.Dict{"username": username, "active": true}
 }
