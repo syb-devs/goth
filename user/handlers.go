@@ -2,7 +2,6 @@ package user
 
 import (
 	"errors"
-	"net/http"
 	"time"
 
 	"bitbucket.org/syb-devs/goth/app"
@@ -19,7 +18,6 @@ var jwtExp = 24 * time.Hour
 
 type userHandler struct {
 	rest.ResourceHandler
-	database.ResourceCodec
 	database.ResourceValidator
 }
 
@@ -28,15 +26,12 @@ func newUserHandler() *userHandler {
 	return &userHandler{
 		ResourceHandler:   baseHandler,
 		ResourceValidator: baseHandler,
-		ResourceCodec:     baseHandler,
 	}
 }
 
-func (h *userHandler) RegisterRoutes(r app.Router) error {
-	sm := app.SkipMiddleware
-
-	r.Handle("POST", "/users/register", sm(app.HandlerFunc(h.register), "jwt"))
-	r.Handle("POST", "/users/sessions", sm(app.HandlerFunc(h.login), "jwt"))
+func (h *userHandler) RegisterRoutes(r app.Muxer) error {
+	r.Handle("POST", "/users/register", app.HandlerFunc(h.register))
+	r.Handle("POST", "/users/sessions", app.HandlerFunc(h.login))
 	return nil
 }
 
@@ -44,8 +39,8 @@ type retJWT struct {
 	Token string `json:"token"`
 }
 
-func (h *userHandler) register(w http.ResponseWriter, r *http.Request, ctx *app.Context) error {
-	rUser, err := h.userFromRequest(r)
+func (h *userHandler) register(ctx *app.Context) error {
+	rUser, err := h.decodeUser(ctx)
 	if err != nil {
 		return err
 	}
@@ -61,11 +56,11 @@ func (h *userHandler) register(w http.ResponseWriter, r *http.Request, ctx *app.
 	if err != nil {
 		return err
 	}
-	return h.Encode(w, retJWT{jwt})
+	return ctx.Encode(retJWT{jwt})
 }
 
-func (h *userHandler) login(w http.ResponseWriter, r *http.Request, ctx *app.Context) error {
-	rUser, err := h.userFromRequest(r)
+func (h *userHandler) login(ctx *app.Context) error {
+	rUser, err := h.decodeUser(ctx)
 	if err != nil {
 		return err
 	}
@@ -82,7 +77,7 @@ func (h *userHandler) login(w http.ResponseWriter, r *http.Request, ctx *app.Con
 	if err != nil {
 		return err
 	}
-	return h.Encode(w, retJWT{jwt})
+	return ctx.Encode(retJWT{jwt})
 }
 
 type reqUser struct {
@@ -90,9 +85,9 @@ type reqUser struct {
 	Password string `json:"password"`
 }
 
-func (h *userHandler) userFromRequest(r *http.Request) (*reqUser, error) {
+func (h *userHandler) decodeUser(ctx *app.Context) (*reqUser, error) {
 	ru := &reqUser{}
-	if err := h.Decode(r.Body, ru); err != nil {
+	if err := ctx.Decode(ru); err != nil {
 		return nil, err
 	}
 	if ru.Username == "" || len(ru.Password) == 0 {

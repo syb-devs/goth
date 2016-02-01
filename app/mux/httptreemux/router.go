@@ -6,29 +6,31 @@ import (
 	"bitbucket.org/syb-devs/goth/app"
 
 	"github.com/dimfeld/httptreemux"
-	"github.com/gorilla/context"
 )
 
-// Router resolves requests to the corresponding HTTP handler
-type Router struct {
+// Muxer resolves requests to the corresponding HTTP handler
+type Muxer struct {
 	*httptreemux.TreeMux
+	ctxGen app.CtxGenHTTP
 }
 
-// New returns a Router object
-func New() *Router {
-	return &Router{
+// New returns a Muxer object
+func New(ctxGen app.CtxGenHTTP) *Muxer {
+	return &Muxer{
+		ctxGen:  ctxGen,
 		TreeMux: httptreemux.New(),
 	}
 }
 
 // Handle registers an HTTP handler to a given verb / path combination
-func (rt *Router) Handle(verb, path string, h app.Handler) {
+func (rt *Muxer) Handle(verb, path string, h app.Handler) {
 	rt.TreeMux.Handle(verb, path, rt.wrapHandler(h))
 }
 
-func (rt *Router) wrapHandler(h app.Handler) httptreemux.HandlerFunc {
+func (rt *Muxer) wrapHandler(h app.Handler) httptreemux.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request, urlParams map[string]string) {
-		context.Set(r, "url_params", app.URLParams(urlParams))
-		h.ServeHTTP(w, r, nil)
+		ctx := rt.ctxGen(w, r)
+		ctx.URLParams = app.URLParams(urlParams)
+		h.Serve(ctx)
 	}
 }

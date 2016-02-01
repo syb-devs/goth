@@ -1,57 +1,59 @@
 package main
 
 import (
+	"expvar"
 	"fmt"
 	"os"
 
 	"bitbucket.org/syb-devs/goth/app"
+	"bitbucket.org/syb-devs/goth/app/middleware/buffer"
+	"bitbucket.org/syb-devs/goth/app/middleware/chain"
+	"bitbucket.org/syb-devs/goth/app/middleware/cors"
+	"bitbucket.org/syb-devs/goth/app/middleware/recovr"
+	"bitbucket.org/syb-devs/goth/app/middleware/timer"
 	"bitbucket.org/syb-devs/goth/app/mux/httptreemux"
-	"bitbucket.org/syb-devs/goth/database"
-	"bitbucket.org/syb-devs/goth/database/driver/mongodb"
-	_ "bitbucket.org/syb-devs/goth/user"
+	// "bitbucket.org/syb-devs/goth/database"
+	// "bitbucket.org/syb-devs/goth/database/driver/mongodb"
+	// _ "bitbucket.org/syb-devs/goth/user"
 
-	// jwt "github.com/auth0/go-jwt-middleware"
-	"github.com/rs/cors"
 	"github.com/syb-devs/dockerlink"
 )
 
 func main() {
-	app := app.NewApp("Goth example app v0.1.0")
+	myApp := app.NewApp("Goth example myApp v0.1.0")
 
-	ps := database.ConnectionParams{
-		"url":      getMongoURI(),
-		"database": "goth",
-	}
-	conn, err := mongodb.NewConnection(ps, database.NewResourceMap())
-	if err != nil {
-		panic(err)
-	}
-
-	app.DB.Connection = conn
-	app.DB.ResourceMap = conn.Map()
-	app.DB.Repository = mongodb.NewRepository(conn)
+	// HTTP setup
+	myApp.SetMuxer(httptreemux.New(myApp.NewContextHTTP))
 
 	corsOpts := cors.Options{
 		Debug:          false,
 		AllowedHeaders: []string{"*"},
 	}
-	// jwtOpts := jwt.Options{
-	// 	Debug:               false,
-	// 	ValidationKeyGetter: user.JWTKeyFunc,
+	mainChain := chain.New(
+		buffer.New(),
+		recovr.New(),
+		timer.New(),
+		cors.New(corsOpts).Handler,
+	)
+	myApp.AddChain(mainChain, "main")
+
+	myApp.Handle("GET", "/", myApp.WrapHandlerFunc(rootHandler, "main"))
+	myApp.Handle("GET", "/hello", myApp.WrapHandlerFunc(helloJSONHandler, "main"))
+	myApp.Handle("GET", "/debug/vars", myApp.WrapHandlerFunc(expvarHandler, "main"))
+
+	// ps := database.ConnectionParams{
+	// 	"url":      getMongoURI(),
+	// 	"database": "goth",
 	// }
+	// conn, err := mongodb.NewConnection(ps, database.NewResourceMap())
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// myApp.DB.Connection = conn
+	// myApp.DB.ResourceMap = conn.Map()
+	// myApp.DB.Repository = mongodb.NewRepository(conn)
 
-	// app.Use(jwt.New(jwtOpts).Handler, "jwt")
-	app.UseGlobal(cors.New(corsOpts).Handler)
-
-	// Setup the Websockets server
-	// wss := core.NewWSServer(app)
-	// wss.LoadEventHandlers()
-	//
-	// sm := core.SkipMiddleware
-	// app.Handle("GET", "/ws", sm(wss, "jwt"))
-
-	app.SetRouter(httptreemux.New())
-	app.Run()
+	myApp.Run()
 }
 
 func getMongoURI() string {
@@ -62,4 +64,34 @@ func getMongoURI() string {
 		return fmt.Sprintf("%s:%d", link.Address, link.Port)
 	}
 	panic("mongodb connection not found, use MONGO_URL env var or a docker link with mongodb name")
+}
+
+func rootHandler(ctx *app.Context) error {
+	ctx.Header().Set("Foo", "bar")
+	ctx.WriteString("rootHandler\n")
+	return nil
+}
+
+func helloJSONHandler(ctx *app.Context) error {
+	panic("mi abuela fuma")
+
+	return ctx.Encode(struct {
+		Message string `json:"message"`
+	}{"hello!"})
+}
+
+func expvarHandler(ctx *app.Context) error {
+	w := ctx
+	ctx.Header().Set("Content-Type", "application/json; charset=utf-8")
+	fmt.Fprintf(w, "{\n")
+	first := true
+	expvar.Do(func(kv expvar.KeyValue) {
+		if !first {
+			fmt.Fprintf(w, ",\n")
+		}
+		first = false
+		fmt.Fprintf(w, "%q: %s", kv.Key, kv.Value)
+	})
+	fmt.Fprintf(w, "\n}\n")
+	return nil
 }

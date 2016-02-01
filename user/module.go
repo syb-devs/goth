@@ -24,7 +24,7 @@ func (m *module) Bootstrap(app *app.App, level int) error {
 		ColName:         "users",
 		ArchiveOnDelete: true,
 	})
-	rest.RegisterResource(app, rest.ResourceConfig{
+	rest.Register(app, rest.ResourceConfig{
 		Name:    "user",
 		URLName: "users",
 		Handler: newUserHandler(),

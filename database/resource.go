@@ -1,11 +1,5 @@
 package database
 
-import (
-	"encoding/json"
-	"io"
-	"net/http"
-)
-
 const (
 	ResourceActionCreate = iota
 	ResourceActionRetrieve
@@ -27,29 +21,6 @@ type ResourceList interface{}
 type ResourceConstructor interface {
 	New() Resource
 	NewList() ResourceList
-}
-
-// ResourceCodec interface is used to encode and decode resources between the App
-// and the transport layers (HTTP, websockets)
-type ResourceCodec interface {
-	Encode(io.Writer, interface{}) error
-	Decode(io.Reader, interface{}) error
-}
-
-// JSONResourceCodec encodes and decodes resources to and from JSON data
-type JSONResourceCodec struct{}
-
-// Encode marshals a resource (r) as JSON data in the given writer (w)
-func (c *JSONResourceCodec) Encode(w io.Writer, res interface{}) error {
-	if rw, ok := w.(http.ResponseWriter); ok {
-		rw.Header().Set("Content-Type", "application/json")
-	}
-	return json.NewEncoder(w).Encode(res)
-}
-
-// Decode unmarshalls JSON data read from the Reader (r) into res
-func (c *JSONResourceCodec) Decode(r io.Reader, res interface{}) error {
-	return json.NewDecoder(r).Decode(res)
 }
 
 // ResourceValidator interface is used to check the validity of a given resource
