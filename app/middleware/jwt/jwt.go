@@ -1,7 +1,6 @@
 package jwt
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -13,7 +12,7 @@ import (
 )
 
 // A function called whenever an error is encountered
-type errorHandler func(w http.ResponseWriter, r *http.Request, err string)
+type errorHandler func(w http.ResponseWriter, r *http.Request, err error)
 
 // TokenExtractor is a function that takes a request as input and returns
 // either a token or an error.  An error should only be returned if an attempt
@@ -58,8 +57,8 @@ type JWTMiddleware struct {
 	Options Options
 }
 
-func OnError(w http.ResponseWriter, r *http.Request, err string) {
-	http.Error(w, err, http.StatusUnauthorized)
+func OnError(w http.ResponseWriter, r *http.Request, err error) {
+	http.Error(w, err.Error(), http.StatusUnauthorized)
 }
 
 // New constructs a new Secure instance with supplied options.
@@ -103,6 +102,7 @@ func (m *JWTMiddleware) Handler(h app.Handler) app.Handler {
 
 		// If there was an error, do not continue.
 		if err != nil {
+			m.Options.ErrorHandler(ctx.ResponseWriter, ctx.Request, err)
 			return err
 		}
 
@@ -154,7 +154,6 @@ func FromFirst(extractors ...TokenExtractor) TokenExtractor {
 
 func (m *JWTMiddleware) CheckJWT(ctx *app.Context) error {
 	r := ctx.Request
-	w := ctx.ResponseWriter
 
 	if !m.Options.EnableAuthOnOptions {
 		if r.Method == "OPTIONS" {
@@ -165,16 +164,8 @@ func (m *JWTMiddleware) CheckJWT(ctx *app.Context) error {
 	// Use the specified token extractor to extract a token from the request
 	token, err := m.Options.Extractor(r)
 
-	// If debugging is turned on, log the outcome
-	if err != nil {
-		m.logf("Error extracting JWT: %v", err)
-	} else {
-		m.logf("Token extracted: %s", token)
-	}
-
 	// If an error occurs, call the error handler and return an error
 	if err != nil {
-		m.Options.ErrorHandler(w, r, err.Error())
 		return fmt.Errorf("Error extracting token: %v", err)
 	}
 
@@ -182,16 +173,13 @@ func (m *JWTMiddleware) CheckJWT(ctx *app.Context) error {
 	if token == "" {
 		// Check if it was required
 		if m.Options.CredentialsOptional {
-			m.logf("  No credentials found (CredentialsOptional=true)")
+			ctx.App.Log.Debug("No credentials found (CredentialsOptional=true)")
 			// No error, just no token (and that is ok given that CredentialsOptional is true)
 			return nil
 		}
 
 		// If we get here, the required token is missing
-		errorMsg := "Required authorization token not found"
-		m.Options.ErrorHandler(w, r, errorMsg)
-		m.logf("  Error: No credentials found (CredentialsOptional=false)")
-		return fmt.Errorf(errorMsg)
+		return fmt.Errorf("Required authorization token not found")
 	}
 
 	// Now parse the token
@@ -199,8 +187,6 @@ func (m *JWTMiddleware) CheckJWT(ctx *app.Context) error {
 
 	// Check if there was an error in parsing...
 	if err != nil {
-		m.logf("Error parsing token: %v", err)
-		m.Options.ErrorHandler(w, r, err.Error())
 		return fmt.Errorf("Error parsing token: %v", err)
 	}
 
@@ -208,19 +194,15 @@ func (m *JWTMiddleware) CheckJWT(ctx *app.Context) error {
 		message := fmt.Sprintf("Expected %s signing method but token specified %s",
 			m.Options.SigningMethod.Alg(),
 			parsedToken.Header["alg"])
-		m.logf("Error validating token algorithm: %s", message)
-		m.Options.ErrorHandler(w, r, errors.New(message).Error())
 		return fmt.Errorf("Error validating token algorithm: %s", message)
 	}
 
 	// Check if the parsed token is valid...
 	if !parsedToken.Valid {
-		m.logf("Token is invalid")
-		m.Options.ErrorHandler(w, r, "The token isn't valid")
 		return fmt.Errorf("Token is invalid")
 	}
 
-	m.logf("JWT: %v", parsedToken)
+	ctx.App.Log.Debugf("JWT: %v", parsedToken)
 
 	// If we get here, everything worked and we can set the
 	// user property in context.

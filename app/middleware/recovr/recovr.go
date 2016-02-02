@@ -1,7 +1,6 @@
 package recovr
 
 import (
-	"log"
 	"net/http"
 	"runtime/debug"
 
@@ -15,7 +14,7 @@ func New() app.Middleware {
 			func(ctx *app.Context) error {
 				defer func() {
 					if err := recover(); err != nil {
-						log.Printf("%s: %s", err, debug.Stack())
+						ctx.App.Log.Errorf("%s: %s", err, debug.Stack())
 						http.Error(ctx, http.StatusText(500), 500)
 					}
 				}()

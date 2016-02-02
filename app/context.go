@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 
@@ -29,15 +28,6 @@ type Context struct {
 // Close performs clean-up tasks for the Context
 func (ctx *Context) Close() {
 	ctx.Conn.Close()
-}
-
-// Error writes an error to the context response
-func (ctx *Context) Error(err error) {
-	//TODO(zareone) log error
-	//TODO(zareone) use registered custom error handlers
-	fmt.Printf("error serving %s %s: %v", ctx.Request.Method, ctx.Request.URL.String(), err)
-	code := http.StatusInternalServerError
-	http.Error(ctx, http.StatusText(code), code)
 }
 
 // WriteString writes the given string in the Context's ResponseWriter

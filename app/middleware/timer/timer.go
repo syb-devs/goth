@@ -1,7 +1,6 @@
 package timer
 
 import (
-	"fmt"
 	"time"
 
 	"bitbucket.org/syb-devs/goth/app"
@@ -16,7 +15,6 @@ func New() app.Middleware {
 				err := h.Serve(ctx)
 				elapsed := time.Now().Sub(start)
 				ctx.Header().Set("Elapsed", elapsed.String())
-				fmt.Printf("HTTP Headers:\n %v\n", ctx.Header())
 				return err
 			})
 	}

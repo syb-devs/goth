@@ -2,13 +2,14 @@ package app
 
 import (
 	"fmt"
-	"log"
 	"net/http"
+	"os"
 	"sync"
 
 	"bitbucket.org/syb-devs/goth/database"
 	"bitbucket.org/syb-devs/goth/encoding/json"
 	"bitbucket.org/syb-devs/goth/kv"
+	"bitbucket.org/syb-devs/goth/log"
 )
 
 // App represents the main application
@@ -20,6 +21,7 @@ type App struct {
 		database.Repository
 		*database.ResourceMap
 	}
+	Log log.Logger
 	Muxer
 	modules map[string]Module
 	mws     map[string]MiddlewareChain
@@ -31,6 +33,7 @@ func NewApp(name string) *App {
 		name:    name,
 		modules: modules,
 		mws:     make(map[string]MiddlewareChain),
+		Log:     log.New(os.Stderr),
 	}
 }
 
@@ -41,6 +44,8 @@ func (a *App) Name() string {
 
 // AddChain adds a MiddlewareChain to be used when registering handlers
 func (a *App) AddChain(chain MiddlewareChain, name string) {
+	a.Lock()
+	defer a.Unlock()
 	a.mws[name] = chain
 }
 
@@ -81,10 +86,12 @@ func (a *App) NewContextHTTP(w http.ResponseWriter, r *http.Request) *Context {
 func (a *App) Run() {
 	defer a.Close()
 
-	fmt.Printf("### %s is starting...\n", a.name)
+	a.Log.Infof("### %s is starting...\n", a.name)
 	a.bootstrap()
-	fmt.Printf("listening on port 8080...\n")
-	log.Fatal(http.ListenAndServe(":8080", a))
+	a.Log.Infof("listening on port 8080...\n")
+	err := http.ListenAndServe(":8080", a)
+	a.Log.Error(err)
+	os.Exit(1)
 }
 
 // Close closes the database connection of this App instance (Copy/Close pattern)
@@ -116,7 +123,7 @@ func (a *App) registerResourceDB(res database.Resource, conf database.ResourceCo
 func (a *App) bootstrap() {
 	for level := 0; level <= 10; level++ {
 		for name, mod := range a.modules {
-			fmt.Printf("bootstrapping module %s at level %d\n", name, level)
+			a.Log.Debugf("bootstrapping module %s at level %d\n", name, level)
 			err := mod.Bootstrap(a, level)
 			if err != nil {
 				panic(fmt.Sprintf("bootstrap error: module: %s, level: %d", name, level))
