@@ -1,6 +1,8 @@
 package mongodb
 
 import (
+	"reflect"
+
 	"bitbucket.org/syb-devs/goth/database"
 
 	"gopkg.in/mgo.v2"
@@ -106,6 +108,7 @@ func (r *Repository) FindMany(dest database.ResourceList, query database.Query) 
 
 func (r *Repository) query(dest interface{}, query database.Query) (*mgo.Query, error) {
 	colName, err := r.Conn.Map().ColFor(dest)
+
 	if err != nil {
 		return nil, err
 	}
@@ -122,4 +125,84 @@ func (r *Repository) query(dest interface{}, query database.Query) (*mgo.Query, 
 		it.Skip(query.Skip)
 	}
 	return it, nil
+}
+
+// FetchRelated fetchs resouces related to the given resource
+func (r *Repository) FetchRelated(source database.Resource, relations ...string) error {
+	for _, relation := range relations {
+		rel, err := r.Conn.Map().Relationship(source, relation)
+		if err != nil {
+			return err
+		}
+		switch rel.Kind {
+		case database.HasOne, database.HasZeroOne:
+			ID := IDFromField(rel, source)
+			if ID == nil {
+				continue
+			}
+			dest := getTargetField(rel, source)
+			err = r.Get(ID, dest.(database.Resource))
+			if err != nil {
+				return err
+			}
+		case database.HasMany:
+			IDs := fieldByName(source, rel.FieldName).([]bson.ObjectId)
+			if len(IDs) == 0 {
+				continue
+			}
+			where := bson.M{"_id": bson.M{"$in": IDs}}
+			dest := getTargetField(rel, source)
+			err = r.FindMany(dest, database.NewQ(where))
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func IDFromField(rel database.Relationship, res database.Resource) *bson.ObjectId {
+	rawID := fieldByName(res, rel.FieldName)
+	switch rel.Kind {
+	case database.HasOne:
+		val := rawID.(bson.ObjectId)
+		return &val
+	case database.HasZeroOne:
+		return rawID.(*bson.ObjectId)
+	default:
+		return nil
+	}
+}
+
+// getTargetField returns the struct field for storing related resources
+func getTargetField(rel database.Relationship, res database.Resource) interface{} {
+	if targeter, ok := res.(database.RelationshipTargeter); ok {
+		// The Resource provides a GetRelTarget method that gives us the target field
+		return targeter.RelationshipTarget(rel.Name)
+	}
+
+	v := reflect.ValueOf(res)
+	for v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	f := v.FieldByName(rel.TargetField)
+	if f.Kind() != reflect.Ptr {
+		return f.Addr().Interface()
+	}
+	if !f.IsNil() {
+		return f.Interface()
+	}
+
+	zval := reflect.New(f.Type().Elem())
+	f.Set(zval)
+	return zval.Interface()
+}
+
+func fieldByName(i interface{}, field string) interface{} {
+	t := reflect.ValueOf(i)
+	// If pointer or slice, get it's element
+	for t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	return t.FieldByName(field).Interface()
 }
