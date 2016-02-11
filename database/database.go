@@ -18,6 +18,7 @@ type Repository interface {
 	Get(ID interface{}, dest Resource) error
 	FindOne(dest Resource, q Query) error
 	FindMany(dest ResourceList, q Query) error
+	FetchRelated(d Resource, relations ...string) error
 }
 
 // Dict is an alias to map[string]interface{}

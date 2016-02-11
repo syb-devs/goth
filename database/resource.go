@@ -1,11 +1,20 @@
 package database
 
+import (
+	"errors"
+	"reflect"
+)
+
 const (
 	ResourceActionCreate = iota
 	ResourceActionRetrieve
 	ResourceActionUpdate
 	ResourceActionDelete
 	ResourceActionList
+)
+
+var (
+	ErrSliceExpected = errors.New("expected slice of database.Resource")
 )
 
 // Resource represents an entity that can be persisted to database.
@@ -64,4 +73,19 @@ func CheckResourceList(l ResourceList) error {
 	// - Is actually a slice or pointer to one
 	// - The type of the slice implements the Resource interface
 	return nil
+}
+
+func AsResourceList(list interface{}) ([]Resource, error) {
+	var ret []Resource
+	v := reflect.ValueOf(list)
+	for v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	if v.Kind() != reflect.Slice {
+		return nil, ErrSliceExpected
+	}
+	for i := 0; i < v.Len(); i++ {
+		ret = append(ret, v.Index(i).Interface().(Resource))
+	}
+	return ret, nil
 }

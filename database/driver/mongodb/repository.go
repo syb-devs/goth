@@ -136,7 +136,7 @@ func (r *Repository) FetchRelated(source database.Resource, relations ...string)
 		}
 		switch rel.Kind {
 		case database.HasOne, database.HasZeroOne:
-			ID := IDFromField(rel, source)
+			ID := idFromField(rel, source)
 			if ID == nil {
 				continue
 			}
@@ -161,7 +161,7 @@ func (r *Repository) FetchRelated(source database.Resource, relations ...string)
 	return nil
 }
 
-func IDFromField(rel database.Relationship, res database.Resource) *bson.ObjectId {
+func idFromField(rel database.Relationship, res database.Resource) *bson.ObjectId {
 	rawID := fieldByName(res, rel.FieldName)
 	switch rel.Kind {
 	case database.HasOne:

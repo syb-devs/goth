@@ -13,12 +13,14 @@ import (
 	"bitbucket.org/syb-devs/goth/app/mux/httptreemux"
 	"bitbucket.org/syb-devs/goth/database"
 	"bitbucket.org/syb-devs/goth/database/driver/mongodb"
+	"bitbucket.org/syb-devs/goth/rest"
+	// _ "bitbucket.org/syb-devs/goth/user"
 
 	"github.com/syb-devs/dockerlink"
 )
 
 func main() {
-	myApp := app.NewApp("Goth example myApp v0.1.0")
+	myApp := app.NewApp("Goth example App v0.1.0")
 
 	// HTTP setup
 	myApp.SetMuxer(httptreemux.New(myApp.NewContextHTTP))
@@ -38,7 +40,7 @@ func main() {
 	myApp.Handle("GET", "/", myApp.WrapHandlerFunc(rootHandler, "main"))
 	myApp.Handle("GET", "/hello", myApp.WrapHandlerFunc(helloJSONHandler, "main"))
 	myApp.Handle("GET", "/debug/vars", myApp.WrapHandlerFunc(expvarHandler, "main"))
-	myApp.Handle("GET", "/users", myApp.WrapHandlerFunc(listUsers, "main"))
+	// myApp.Handle("GET", "/users", myApp.WrapHandlerFunc(listUsers, "main"))
 
 	ps := database.ConnectionParams{
 		"url":      getMongoURI(),
@@ -55,6 +57,10 @@ func main() {
 	myApp.DB.RegisterResource(Todo{}, "todos", "")
 	myApp.DB.RegisterResource(User{}, "users", "")
 	myApp.DB.RegisterResource(Profile{}, "profiles", "")
+
+	rest.Register(myApp, &Todo{}, "todos")
+	rest.Register(myApp, &User{}, "users")
+	rest.Register(myApp, &Profile{}, "profiles")
 
 	createData(myApp)
 	myApp.Run()

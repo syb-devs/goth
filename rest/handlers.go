@@ -2,6 +2,7 @@ package rest
 
 import (
 	"fmt"
+	"reflect"
 
 	"bitbucket.org/syb-devs/goth/app"
 	"bitbucket.org/syb-devs/goth/database"
@@ -11,9 +12,9 @@ const (
 	resourceIDParam = "resource_id"
 )
 
-// ResourceHandler interface represents the HTTP interface for CRUD operations
+// CRUDHandler interface represents the HTTP interface for CRUD operations
 // than can be applied to a Resource
-type ResourceHandler interface {
+type CRUDHandler interface {
 	Create(ctx *app.Context) error
 	Retrieve(ctx *app.Context) error
 	Update(ctx *app.Context) error
@@ -21,52 +22,52 @@ type ResourceHandler interface {
 	List(ctx *app.Context) error
 }
 
-// ResourceConfig has the needed info to Register a resource in the App
-type ResourceConfig struct {
-	Name    string
-	URLName string
-	Handler ResourceHandler
+// Register registers a resource for setting up automatic REST CRUD handlers in the App
+func Register(a *app.App, res database.Resource, name string) {
+	RegisterCRUD(a, New(res), name)
 }
 
-// Register registers a resource for setting up automatic REST CRUD handlers in the App
-func Register(a *app.App, conf ResourceConfig) {
-	pName := conf.URLName
-	if pName == "" {
-		panic(fmt.Sprintf("empty path name for resource %s", conf.Name))
-	}
-	URL := fmt.Sprintf("/%s", pName)
-	URLWithID := fmt.Sprintf("/%s/:%s", pName, resourceIDParam)
-	rh := conf.Handler
+// RegisterCRUD registers a CRUDHandler
+func RegisterCRUD(a *app.App, crud CRUDHandler, name string) {
+	URL := fmt.Sprintf("/%s", name)
+	URLWithID := fmt.Sprintf("/%s/:%s", name, resourceIDParam)
 
 	// Register CRUD routes for Resource
-	a.Handle("POST", URL, app.HandlerFunc(rh.Create))
-	a.Handle("GET", URLWithID, app.HandlerFunc(rh.Retrieve))
-	a.Handle("PUT", URLWithID, app.HandlerFunc(rh.Update))
-	a.Handle("DELETE", URLWithID, app.HandlerFunc(rh.Delete))
-	a.Handle("GET", URL, app.HandlerFunc(rh.List))
+	a.Handle("POST", URL, a.WrapHandlerFunc(crud.Create, "main"))
+	a.Handle("GET", URLWithID, a.WrapHandlerFunc(crud.Retrieve, "main"))
+	a.Handle("PUT", URLWithID, a.WrapHandlerFunc(crud.Update, "main"))
+	a.Handle("DELETE", URLWithID, a.WrapHandlerFunc(crud.Delete, "main"))
+	a.Handle("GET", URL, a.WrapHandlerFunc(crud.List, "main"))
 }
 
-// DefResourceHandler is the default implementation for ResourceHandler interface
-type DefResourceHandler struct {
-	constructor database.ResourceConstructor
+// BaseCRUD is the default implementation for ResourceHandler interface
+type BaseCRUD struct {
+	resourceType reflect.Type
 	database.ResourceValidator
 }
 
-// NewDefResourceHandler allocates and returns a DefResourceHandler
-func NewDefResourceHandler(rc database.ResourceConstructor) *DefResourceHandler {
-	if rc == nil {
-		panic("valid resource constructor needed")
-	}
+// New allocates and returns a BaseCRUD
+func New(resource database.Resource) *BaseCRUD {
 
-	return &DefResourceHandler{
-		constructor:       rc,
+	return &BaseCRUD{
+		resourceType:      reflect.TypeOf(resource),
 		ResourceValidator: &database.DummyResourceValidator{},
 	}
 }
 
+// NewResource allocates a new object of the type of the resource
+func (h *BaseCRUD) NewResource(ctx *app.Context) database.Resource {
+	return ctx.App.DB.CreateResource(h.resourceType).(database.Resource)
+}
+
+// NewResourceList allocates a new slice of objects of the type of the resource
+func (h *BaseCRUD) NewResourceList(ctx *app.Context) database.ResourceList {
+	return ctx.App.DB.CreateResourceList(h.resourceType)
+}
+
 // Create decodes a resource from the Request, validates it and stores it in the database
-func (h *DefResourceHandler) Create(ctx *app.Context) error {
-	res := h.constructor.New()
+func (h *BaseCRUD) Create(ctx *app.Context) error {
+	res := h.NewResource(ctx)
 	err := ctx.Decode(res)
 	if err != nil {
 		return err
@@ -83,10 +84,14 @@ func (h *DefResourceHandler) Create(ctx *app.Context) error {
 }
 
 // Retrieve fetches a resource from the database and encodes it to the ResponseWriter
-func (h *DefResourceHandler) Retrieve(ctx *app.Context) error {
+func (h *BaseCRUD) Retrieve(ctx *app.Context) error {
 	ID := ctx.URLParams.ByName(resourceIDParam)
-	res := h.constructor.New()
+	res := h.NewResource(ctx)
 	err := ctx.App.DB.Get(ID, res)
+	if err != nil {
+		return err
+	}
+	err = h.expand(ctx, res)
 	if err != nil {
 		return err
 	}
@@ -94,8 +99,8 @@ func (h *DefResourceHandler) Retrieve(ctx *app.Context) error {
 }
 
 // Update decodes a resource from the Request, validates it and updates it in the database
-func (h *DefResourceHandler) Update(ctx *app.Context) error {
-	res := h.constructor.New()
+func (h *BaseCRUD) Update(ctx *app.Context) error {
+	res := h.NewResource(ctx)
 	ID := ctx.URLParams.ByName(resourceIDParam)
 	err := ctx.App.DB.Get(ID, res)
 	if err != nil {
@@ -117,8 +122,8 @@ func (h *DefResourceHandler) Update(ctx *app.Context) error {
 }
 
 // Delete deletes a Resource from the database
-func (h *DefResourceHandler) Delete(ctx *app.Context) error {
-	res := h.constructor.New()
+func (h *BaseCRUD) Delete(ctx *app.Context) error {
+	res := h.NewResource(ctx)
 	ID := ctx.URLParams.ByName(resourceIDParam)
 	err := ctx.App.DB.Get(ID, res)
 	if err != nil {
@@ -128,12 +133,38 @@ func (h *DefResourceHandler) Delete(ctx *app.Context) error {
 }
 
 // List retrieves a list of Resources from the database, and encodes it to the ResponseWriter
-func (h *DefResourceHandler) List(ctx *app.Context) error {
-	list := h.constructor.NewList()
+func (h *BaseCRUD) List(ctx *app.Context) error {
+	list := h.NewResourceList(ctx)
 	query := database.NewQ(nil)
 	err := ctx.App.DB.FindMany(list, query)
 	if err != nil {
 		return err
 	}
+	err = h.expandList(ctx, list)
+	if err != nil {
+		return err
+	}
 	return ctx.Encode(list)
+}
+
+func (h *BaseCRUD) expand(ctx *app.Context, res database.Resource) error {
+	rels := ctx.Request.URL.Query()["expand"]
+	if len(rels) == 0 {
+		return nil
+	}
+	return ctx.App.DB.FetchRelated(res, rels...)
+}
+
+func (h *BaseCRUD) expandList(ctx *app.Context, list interface{}) error {
+	resList, err := database.AsResourceList(list)
+	if err != nil {
+		return err
+	}
+	for _, res := range resList {
+		err := h.expand(ctx, res)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

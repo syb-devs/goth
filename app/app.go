@@ -99,27 +99,6 @@ func (a *App) Close() {
 	a.DB.Close()
 }
 
-// RegisterResource registers a new Resource in the App
-func (a *App) RegisterResource(res database.Resource, conf database.ResourceConfig) {
-	if conf.Name == "" {
-		panic("trying to register resource without name")
-	}
-	// TODO(zareone) define a RegisterResource hook / callback in the module interface
-	// and perform this tasks from the MongoDB and HTTP modules??
-	a.registerResourceDB(res, conf)
-}
-
-func (a *App) registerResourceDB(res database.Resource, conf database.ResourceConfig) error {
-	if conf.ColName == "" {
-		panic(fmt.Sprintf("invalid collection name for resource %s", conf.Name))
-	}
-	var deletedCol string
-	if conf.ArchiveOnDelete {
-		deletedCol = "archived_" + conf.ColName
-	}
-	return a.DB.ResourceMap.RegisterResource(res, conf.ColName, deletedCol)
-}
-
 func (a *App) bootstrap() {
 	for level := 0; level <= 10; level++ {
 		for name, mod := range a.modules {

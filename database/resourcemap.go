@@ -2,7 +2,6 @@ package database
 
 import (
 	"errors"
-	"fmt"
 	"reflect"
 	"sync"
 )
@@ -56,26 +55,24 @@ func (m *ResourceMap) RegisterResource(t interface{}, col string, deletedCol str
 }
 
 // CreateResource allocates and returns object of the given type
-func (m *ResourceMap) CreateResource(name string) interface{} {
-	typ := m.types[name]
-	if typ == nil {
-		panic(fmt.Sprintf("no type registered for %s", name))
-	}
-	return reflect.New(typ).Elem().Interface()
+func (m *ResourceMap) CreateResource(t reflect.Type) interface{} {
+	return reflect.New(t).Elem().Interface()
 }
 
 // CreateResourceList allocates and returns a list of objects of the given type
-func (m *ResourceMap) CreateResourceList(name string) interface{} {
-	typ := m.types[name]
-	if typ == nil {
-		panic(fmt.Sprintf("no type registered for %s", name))
-	}
-	slice := reflect.MakeSlice(reflect.SliceOf(typ), 0, 0)
+func (m *ResourceMap) CreateResourceList(t reflect.Type) interface{} {
+	slice := reflect.MakeSlice(reflect.SliceOf(t), 0, 0)
 
 	// Create a pointer to a slice value and set it to the slice
 	ptr := reflect.New(slice.Type())
 	ptr.Elem().Set(slice)
 	return ptr.Interface()
+}
+
+// TypeFromString returns the reflect.Type for a registered type from its full name (package.Type)
+func (m *ResourceMap) TypeFromString(name string) (t reflect.Type, ok bool) {
+	t, ok = m.types[name]
+	return
 }
 
 // Relationships returns the relationships defined for the given resource

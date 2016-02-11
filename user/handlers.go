@@ -6,41 +6,24 @@ import (
 
 	"bitbucket.org/syb-devs/goth/app"
 	"bitbucket.org/syb-devs/goth/database"
-	"bitbucket.org/syb-devs/goth/rest"
 )
 
 var (
-	ErrEmptyUserPass   = errors.New("username and/or password not set")
+	// ErrEmptyUserPass happens when no username and/or password is given for a user
+	ErrEmptyUserPass = errors.New("username and/or password not set")
+
+	// ErrInvalidUserPass happens when no  valid username and/or password is given for a user
 	ErrInvalidUserPass = errors.New("username and/or password is not valid")
 )
 
 var jwtExp = 24 * time.Hour
 
-type userHandler struct {
-	rest.ResourceHandler
-	database.ResourceValidator
-}
-
-func newUserHandler() *userHandler {
-	baseHandler := rest.NewDefResourceHandler(&userDispatcher{})
-	return &userHandler{
-		ResourceHandler:   baseHandler,
-		ResourceValidator: baseHandler,
-	}
-}
-
-func (h *userHandler) RegisterRoutes(r app.Muxer) error {
-	r.Handle("POST", "/users/register", app.HandlerFunc(h.register))
-	r.Handle("POST", "/users/sessions", app.HandlerFunc(h.login))
-	return nil
-}
-
 type retJWT struct {
 	Token string `json:"token"`
 }
 
-func (h *userHandler) register(ctx *app.Context) error {
-	rUser, err := h.decodeUser(ctx)
+func register(ctx *app.Context) error {
+	rUser, err := decodeUser(ctx)
 	if err != nil {
 		return err
 	}
@@ -59,8 +42,8 @@ func (h *userHandler) register(ctx *app.Context) error {
 	return ctx.Encode(retJWT{jwt})
 }
 
-func (h *userHandler) login(ctx *app.Context) error {
-	rUser, err := h.decodeUser(ctx)
+func login(ctx *app.Context) error {
+	rUser, err := decodeUser(ctx)
 	if err != nil {
 		return err
 	}
@@ -85,7 +68,7 @@ type reqUser struct {
 	Password string `json:"password"`
 }
 
-func (h *userHandler) decodeUser(ctx *app.Context) (*reqUser, error) {
+func decodeUser(ctx *app.Context) (*reqUser, error) {
 	ru := &reqUser{}
 	if err := ctx.Decode(ru); err != nil {
 		return nil, err

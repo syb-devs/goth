@@ -15,11 +15,6 @@ type User struct {
 	Active           bool   `bson:"active" json:"-"`
 }
 
-type userDispatcher struct{}
-
-func (d *userDispatcher) New() database.Resource         { return &User{} }
-func (d *userDispatcher) NewList() database.ResourceList { return &[]*User{} }
-
 // QueryByUsername returns a user, querying by username, or error if not found
 func QueryByUsername(username string) database.Dict {
 	return database.Dict{"username": username}
