@@ -3,6 +3,7 @@ package rest
 import (
 	"fmt"
 	"reflect"
+	"strconv"
 
 	"bitbucket.org/syb-devs/goth/app"
 	"bitbucket.org/syb-devs/goth/database"
@@ -135,8 +136,11 @@ func (h *BaseCRUD) Delete(ctx *app.Context) error {
 // List retrieves a list of Resources from the database, and encodes it to the ResponseWriter
 func (h *BaseCRUD) List(ctx *app.Context) error {
 	list := h.NewResourceList(ctx)
-	query := database.NewQ(nil)
-	err := ctx.App.DB.FindMany(list, query)
+	query, err := h.queryFromURL(ctx)
+	if err != nil {
+		return err
+	}
+	err = ctx.App.DB.FindMany(list, query)
 	if err != nil {
 		return err
 	}
@@ -145,6 +149,29 @@ func (h *BaseCRUD) List(ctx *app.Context) error {
 		return err
 	}
 	return ctx.Encode(list)
+}
+
+func (h *BaseCRUD) queryFromURL(ctx *app.Context) (database.Query, error) {
+	getInt := func(field string) (int, error) {
+		val := ctx.Request.URL.Query().Get(field)
+		if val == "" {
+			return 0, nil
+		}
+		return strconv.Atoi(val)
+	}
+
+	ret := database.Query{}
+	limit, err := getInt("limit")
+	if err != nil {
+		return ret, err
+	}
+	skip, err := getInt("skip")
+	if err != nil {
+		return ret, err
+	}
+	sort := ctx.Request.URL.Query()["sort_by"]
+
+	return database.NewQuery(nil, limit, skip, sort...), nil
 }
 
 func (h *BaseCRUD) expand(ctx *app.Context, res database.Resource) error {
