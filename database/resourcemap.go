@@ -56,7 +56,10 @@ func (m *ResourceMap) RegisterResource(t interface{}, col string, deletedCol str
 
 // CreateResource allocates and returns object of the given type
 func (m *ResourceMap) CreateResource(t reflect.Type) interface{} {
-	return reflect.New(t).Elem().Interface()
+	for t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	return reflect.New(t).Interface()
 }
 
 // CreateResourceList allocates and returns a list of objects of the given type

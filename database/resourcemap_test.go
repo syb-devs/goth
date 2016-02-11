@@ -20,8 +20,8 @@ func TestResourceMap(t *testing.T) {
 		typeName         string
 		expectedResource interface{}
 	}{
-		{User{}, "users", "archived_users", "database_test.User", User{}},
-		{&User{}, "users", "archived_users", "database_test.User", User{}},
+		{User{}, "users", "archived_users", "database_test.User", &User{}},
+		{&User{}, "users", "archived_users", "database_test.User", &User{}},
 	}
 
 	for _, test := range tests {
@@ -30,7 +30,8 @@ func TestResourceMap(t *testing.T) {
 		if err != nil {
 			t.Errorf("RegisterResource: %v", err)
 		}
-		resource := rmap.CreateResource(test.typeName)
+		typ, _ := rmap.TypeFromString(test.typeName)
+		resource := rmap.CreateResource(typ)
 		if !sameType(test.expectedResource, resource) {
 			t.Errorf("%T and %T have differing types", test.resource, resource)
 		}
