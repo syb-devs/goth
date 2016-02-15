@@ -26,12 +26,6 @@ type Resource interface {
 // ResourceList is an slice of Resource.
 type ResourceList interface{}
 
-// ResourceConstructor interface is used to instance new resources and resource lists
-type ResourceConstructor interface {
-	New() Resource
-	NewList() ResourceList
-}
-
 // ResourceValidator interface is used to check the validity of a given resource
 // level is used when the validation is dependent of the current action (creating, updating...)
 type ResourceValidator interface {
@@ -75,6 +69,8 @@ func CheckResourceList(l ResourceList) error {
 	return nil
 }
 
+// AsResourceList returns a slice of Resource from a slice
+// of any type that implements the Resource interface
 func AsResourceList(list interface{}) ([]Resource, error) {
 	var ret []Resource
 	v := reflect.ValueOf(list)
