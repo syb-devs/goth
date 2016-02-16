@@ -122,6 +122,9 @@ func New() *Validator {
 	v.tagName = TagName
 	v.RegisterRule("length", &lengthRule{})
 	v.RegisterRule("regexp", &regexpRule{})
+	v.RegisterRule("contains", &containsRule{})
+	v.RegisterRule("hasPrefix", &hasPrefixRule{})
+	v.RegisterRule("hasSufix", &hasSufixRule{})
 
 	return v
 }
