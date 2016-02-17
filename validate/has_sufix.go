@@ -24,7 +24,7 @@ func (r *hasSufixRule) Validate(data interface{}, field string, params []string,
 
 	fieldVal := getInterfaceValue(data, field)
 	hasSufixStr := mustStringify(fieldVal)
-	if strings.HasPrefix(hasSufixStr, hasSufixParam) {
+	if strings.HasSuffix(hasSufixStr, hasSufixParam) {
 		return
 	}
 	errorInput = fmt.Errorf("The field %s = %s should end with %s.", field, hasSufixStr, hasSufixParam)
