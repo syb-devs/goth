@@ -28,6 +28,9 @@ func (r *rule) Validate(data interface{}, field string, params []string, namedPa
 
 	fieldVal := internal.GetInterfaceValue(data, field)
 	containsStr := internal.MustStringify(fieldVal)
+	if containsStr == "" {
+		return
+	}
 	if strings.Contains(containsStr, containsParam) {
 		return
 	}

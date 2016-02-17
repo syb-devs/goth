@@ -28,6 +28,9 @@ func (r *rule) Validate(data interface{}, field string, params []string, namedPa
 
 	fieldVal := internal.GetInterfaceValue(data, field)
 	hasSuffixStr := internal.MustStringify(fieldVal)
+	if hasSuffixStr == "" {
+		return
+	}
 	if strings.HasSuffix(hasSuffixStr, hasSuffixParam) {
 		return
 	}

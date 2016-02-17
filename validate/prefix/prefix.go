@@ -29,6 +29,9 @@ func (r *hasPrefixRule) Validate(data interface{}, field string, params []string
 
 	fieldVal := internal.GetInterfaceValue(data, field)
 	hasPrefixStr := internal.MustStringify(fieldVal)
+	if hasPrefixStr == "" {
+		return
+	}
 	if strings.HasPrefix(hasPrefixStr, hasPrefixParam) {
 		return
 	}
