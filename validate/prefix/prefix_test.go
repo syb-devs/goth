@@ -37,6 +37,14 @@ func TestHasPrefix(t *testing.T) {
 			input: struct {
 				Name string `validate:"hasPrefix:foo"`
 			}{
+				Name: "",
+			},
+			valid: true,
+		},
+		{
+			input: struct {
+				Name string `validate:"hasPrefix:foo"`
+			}{
 				Name: "Bar",
 			},
 			errorPatterns: map[string][]string{"Name": []string{"The field Name = Bar should start with foo."}},

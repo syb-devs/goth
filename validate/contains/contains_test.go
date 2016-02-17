@@ -37,6 +37,14 @@ func TestContains(t *testing.T) {
 			input: struct {
 				Name string `validate:"contains:foo"`
 			}{
+				Name: "",
+			},
+			valid: true,
+		},
+		{
+			input: struct {
+				Name string `validate:"contains:foo"`
+			}{
 				Name: "Bar",
 			},
 			errorPatterns: map[string][]string{"Name": []string{"The field Name = Bar should contain foo."}},

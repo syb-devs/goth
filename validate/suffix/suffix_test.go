@@ -41,6 +41,14 @@ func TestHasSuffix(t *testing.T) {
 			},
 			errorPatterns: map[string][]string{"Name": []string{"The field Name = Bar should end with foo."}},
 		},
+		{
+			input: struct {
+				Name string `validate:"hasSuffix:foo"`
+			}{
+				Name: "",
+			},
+			valid: true,
+		},
 	}
 
 	for _, test := range tests {
