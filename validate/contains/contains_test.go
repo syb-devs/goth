@@ -1,10 +1,14 @@
-package validate_test
+package contains_test
 
 import (
 	"testing"
 
 	"bitbucket.org/syb-devs/goth/validate"
+	"bitbucket.org/syb-devs/goth/validate/contains"
+	"bitbucket.org/syb-devs/goth/validate/internal"
 )
+
+var findErrors = internal.FindErrors
 
 func TestContains(t *testing.T) {
 	var tests = []struct {
@@ -19,7 +23,7 @@ func TestContains(t *testing.T) {
 			}{
 				Name: "Food",
 			},
-			logicErr: validate.ErrContainsParamCount,
+			logicErr: contains.ErrParamCount,
 		},
 		{
 			input: struct {
@@ -59,24 +63,6 @@ func TestContains(t *testing.T) {
 				t.Errorf("validator did not return any errors, expected: %+v", test.errorPatterns)
 			} else {
 				findErrors(t, errs, test.errorPatterns)
-			}
-		}
-	}
-}
-
-func findErrors(t *testing.T, errList validate.FieldErrors, patterns map[string][]string) {
-	for field, patErrs := range patterns {
-		valErrs := errList[field]
-		for _, patErr := range patErrs {
-			found := false
-			for _, valErr := range valErrs {
-				if patErr == valErr.Error() {
-					found = true
-					break
-				}
-			}
-			if !found {
-				t.Errorf("expected error '%s' for field '%s', but was not found", patErr, field)
 			}
 		}
 	}

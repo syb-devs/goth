@@ -1,11 +1,15 @@
-package validate_test
+package len_test
 
 import (
 	"errors"
 	"testing"
 
 	"bitbucket.org/syb-devs/goth/validate"
+	"bitbucket.org/syb-devs/goth/validate/internal"
+	"bitbucket.org/syb-devs/goth/validate/len"
 )
+
+var findErrors = internal.FindErrors
 
 func Testlen(t *testing.T) {
 	var tests = []struct {
@@ -20,7 +24,7 @@ func Testlen(t *testing.T) {
 			}{
 				Name: "Jon",
 			},
-			logicErr: validate.ErrLengthParamCount,
+			logicErr: len.ErrParamCount,
 		},
 		{
 			input: struct {
@@ -102,24 +106,6 @@ func Testlen(t *testing.T) {
 				t.Errorf("validator did not return any errors, expected: %+v", test.errorPatterns)
 			} else {
 				findErrors(t, errs, test.errorPatterns)
-			}
-		}
-	}
-}
-
-func findErrors4(t *testing.T, errList validate.FieldErrors, patterns map[string][]string) {
-	for field, patErrs := range patterns {
-		valErrs := errList[field]
-		for _, patErr := range patErrs {
-			found := false
-			for _, valErr := range valErrs {
-				if patErr == valErr.Error() {
-					found = true
-					break
-				}
-			}
-			if !found {
-				t.Errorf("expected error '%s' for field '%s', but was not found", patErr, field)
 			}
 		}
 	}

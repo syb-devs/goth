@@ -1,29 +1,34 @@
-package validate
+package prefix
 
 import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"bitbucket.org/syb-devs/goth/validate"
+	"bitbucket.org/syb-devs/goth/validate/internal"
 )
 
 func init() {
-	RegisterRule("hasPrefix", &hasPrefixRule{})
+	validate.RegisterRule("hasPrefix", &hasPrefixRule{})
 }
 
-var ErrHasPrefixParamCount = errors.New("This rule needs one mandatory parameter")
+// ErrParamCount is returned when the number of rule parameters does not match the expected
+var ErrParamCount = errors.New("This rule needs one mandatory parameter")
 
 // hasPrefixRule struct holds Validate() method to satisfy the Validator interface.
 type hasPrefixRule struct{}
 
 // Validate checks that the given data conforms to the length constraints given as parameters.
 func (r *hasPrefixRule) Validate(data interface{}, field string, params []string, namedParams map[string]string) (errorLogic, errorInput error) {
-	if len(params) == 0 || len(params) > 1 {
-		errorLogic = ErrHasPrefixParamCount
+	if len(params) != 1 {
+		errorLogic = ErrParamCount
+		return
 	}
 	hasPrefixParam := params[0]
 
-	fieldVal := getInterfaceValue(data, field)
-	hasPrefixStr := mustStringify(fieldVal)
+	fieldVal := internal.GetInterfaceValue(data, field)
+	hasPrefixStr := internal.MustStringify(fieldVal)
 	if strings.HasPrefix(hasPrefixStr, hasPrefixParam) {
 		return
 	}

@@ -1,12 +1,16 @@
-package validate_test
+package prefix_test
 
 import (
 	"testing"
 
 	"bitbucket.org/syb-devs/goth/validate"
+	"bitbucket.org/syb-devs/goth/validate/internal"
+	"bitbucket.org/syb-devs/goth/validate/prefix"
 )
 
-func TestHasSuffix(t *testing.T) {
+var findErrors = internal.FindErrors
+
+func TestHasPrefix(t *testing.T) {
 	var tests = []struct {
 		input         interface{}
 		valid         bool
@@ -15,27 +19,27 @@ func TestHasSuffix(t *testing.T) {
 	}{
 		{
 			input: struct {
-				Name string `validate:"hasSufix:foo,bar"`
+				Name string `validate:"hasPrefix:foo,bar"`
 			}{
 				Name: "Food",
 			},
-			logicErr: validate.ErrHasSufixParamCount,
+			logicErr: prefix.ErrParamCount,
 		},
 		{
 			input: struct {
-				Name string `validate:"hasSufix:foo"`
+				Name string `validate:"hasPrefix:foo"`
 			}{
-				Name: "State:foo",
+				Name: "food",
 			},
 			valid: true,
 		},
 		{
 			input: struct {
-				Name string `validate:"hasSufix:foo"`
+				Name string `validate:"hasPrefix:foo"`
 			}{
 				Name: "Bar",
 			},
-			errorPatterns: map[string][]string{"Name": []string{"The field Name = Bar should end with foo."}},
+			errorPatterns: map[string][]string{"Name": []string{"The field Name = Bar should start with foo."}},
 		},
 	}
 
@@ -43,15 +47,15 @@ func TestHasSuffix(t *testing.T) {
 		v := validate.New()
 		res := v.Validate(test.input)
 		err := res.LogicError
-		errs := res.FieldErrors
 
 		if test.logicErr != nil {
-			if err.Error() != test.logicErr.Error() {
+			if err != nil && err.Error() != test.logicErr.Error() {
 				t.Errorf("expecting logic error: %v, got: %v", test.logicErr, err)
 			}
 		} else if err != nil {
 			t.Errorf(err.Error())
 		}
+		errs := res.FieldErrors
 		if test.valid && errs != nil && errs.Len() > 0 {
 			t.Errorf("expecting zero errors, found %s", errs.String())
 		}
@@ -61,24 +65,6 @@ func TestHasSuffix(t *testing.T) {
 				t.Errorf("validator did not return any errors, expected: %+v", test.errorPatterns)
 			} else {
 				findErrors(t, errs, test.errorPatterns)
-			}
-		}
-	}
-}
-
-func findErrors2(t *testing.T, errList validate.FieldErrors, patterns map[string][]string) {
-	for field, patErrs := range patterns {
-		valErrs := errList[field]
-		for _, patErr := range patErrs {
-			found := false
-			for _, valErr := range valErrs {
-				if patErr == valErr.Error() {
-					found = true
-					break
-				}
-			}
-			if !found {
-				t.Errorf("expected error '%s' for field '%s', but was not found", patErr, field)
 			}
 		}
 	}

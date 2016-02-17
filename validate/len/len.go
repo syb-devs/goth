@@ -1,23 +1,27 @@
-package validate
+package len
 
 import (
 	"errors"
 	"fmt"
 	"strconv"
 	"unicode/utf8"
+
+	"bitbucket.org/syb-devs/goth/validate"
+	"bitbucket.org/syb-devs/goth/validate/internal"
 )
 
 func init() {
-	RegisterRule("len", &lengthRule{})
+	validate.RegisterRule("len", &rule{})
 }
 
-var ErrLengthParamCount = errors.New("This rule needs two mandatory params, operator and value")
+// ErrParamCount is returned when the number of rule parameters does not match the expected
+var ErrParamCount = errors.New("This rule needs two mandatory params, operator and value")
 
-// lengthRule struct holds Validate() method to satisfy the Validator interface.
-type lengthRule struct{}
+// rule struct holds Validate() method to satisfy the Validator interface.
+type rule struct{}
 
 // Validate checks that the given data conforms to the length constraints given as parameters.
-func (r *lengthRule) Validate(data interface{}, field string, params []string, namedParams map[string]string) (errorLogic, errorInput error) {
+func (r *rule) Validate(data interface{}, field string, params []string, namedParams map[string]string) (errorLogic, errorInput error) {
 	var op, lengthParam string
 
 	switch len(params) {
@@ -28,7 +32,7 @@ func (r *lengthRule) Validate(data interface{}, field string, params []string, n
 		op = params[0]
 		lengthParam = params[1]
 	default:
-		errorLogic = ErrLengthParamCount
+		errorLogic = ErrParamCount
 		return
 	}
 
@@ -37,8 +41,8 @@ func (r *lengthRule) Validate(data interface{}, field string, params []string, n
 		return
 	}
 
-	fieldVal := getInterfaceValue(data, field)
-	length := utf8.RuneCountInString(mustStringify(fieldVal))
+	fieldVal := internal.GetInterfaceValue(data, field)
+	length := utf8.RuneCountInString(internal.MustStringify(fieldVal))
 
 	var ok bool
 	var opLiteral string

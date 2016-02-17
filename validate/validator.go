@@ -3,7 +3,6 @@ package validate
 
 import (
 	"errors"
-	"fmt"
 	"reflect"
 	"strings"
 	"sync"
@@ -12,7 +11,6 @@ import (
 var (
 	ErrRuleNotFound       = errors.New("Rule not found")
 	ErrStructExpected     = errors.New("The underlying type of the validation data must be struct or *struct")
-	ErrUnsupportedType    = errors.New("Unsupported type for rule")
 	ErrInvalidParamFormat = errors.New("Invalid format for validation rule parameters")
 )
 
@@ -137,13 +135,13 @@ func (v *Validator) checkRules(data interface{}, rules []ruleParams) ([]error, e
 			return errs, ErrRuleNotFound
 		}
 
-		LogicError, err := ruleValidator.Validate(
+		logicErr, err := ruleValidator.Validate(
 			data,
 			ruleData.FieldName,
 			ruleData.Params,
 			ruleData.NamedParams)
-		if LogicError != nil {
-			return errs, err
+		if logicErr != nil {
+			return errs, logicErr
 		}
 		if err != nil {
 			errs = append(errs, err)
@@ -210,31 +208,6 @@ func IsStruct(data interface{}) bool {
 // fieldIsExported  returns true if the struct field is exported.
 func fieldIsExported(f reflect.StructField) bool {
 	return len(f.PkgPath) == 0
-}
-
-// getInterfaceValue returns the value of a given interface using reflection.
-func getInterfaceValue(data interface{}, name string) interface{} {
-	return reflect.ValueOf(data).FieldByName(name).Interface()
-}
-
-// toString returns a literal representation of a given value.
-// The second parameter indicates whether a conversion was possible or not.
-func toString(value interface{}) (string, bool) {
-	switch v := value.(type) {
-	case string, *string, int, *int, int32, *int32, int64, *int64:
-		return fmt.Sprintf("%v", v), true
-	default:
-		return "", false
-	}
-}
-
-// mustStringify tries to convert the given value to string type and panics if not possible.
-func mustStringify(value interface{}) string {
-	strVal, ok := toString(value)
-	if ok == false {
-		panic(ErrUnsupportedType)
-	}
-	return strVal
 }
 
 // FieldErrors is used to store struct validation errors grouped by field name.
