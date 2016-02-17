@@ -41,7 +41,9 @@ func TestHasPrefix(t *testing.T) {
 
 	for _, test := range tests {
 		v := validate.New()
-		err := v.Validate(test.input)
+		res := v.Validate(test.input)
+		err := res.LogicError
+
 		if test.logicErr != nil {
 			if err.Error() != test.logicErr.Error() {
 				t.Errorf("expecting logic error: %v, got: %v", test.logicErr, err)
@@ -49,7 +51,7 @@ func TestHasPrefix(t *testing.T) {
 		} else if err != nil {
 			t.Errorf(err.Error())
 		}
-		errs := v.Errors()
+		errs := res.FieldErrors
 		if test.valid && errs != nil && errs.Len() > 0 {
 			t.Errorf("expecting zero errors, found %s", errs.String())
 		}
@@ -58,13 +60,13 @@ func TestHasPrefix(t *testing.T) {
 			if errs == nil {
 				t.Errorf("validator did not return any errors, expected: %+v", test.errorPatterns)
 			} else {
-				findErrors(t, *errs, test.errorPatterns)
+				findErrors(t, errs, test.errorPatterns)
 			}
 		}
 	}
 }
 
-func findErrors(t *testing.T, errList validate.ErrList, patterns map[string][]string) {
+func findErrors3(t *testing.T, errList validate.FieldErrors, patterns map[string][]string) {
 	for field, patErrs := range patterns {
 		valErrs := errList[field]
 		for _, patErr := range patErrs {

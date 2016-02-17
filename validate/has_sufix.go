@@ -6,6 +6,10 @@ import (
 	"strings"
 )
 
+func init() {
+	RegisterRule("hasSuffix", &hasSufixRule{})
+}
+
 var ErrHasSufixParamCount = errors.New("This rule needs one mandatory parameter")
 
 // hasSufixRule struct holds Validate() method to satisfy the Validator interface.

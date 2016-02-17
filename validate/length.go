@@ -7,6 +7,10 @@ import (
 	"unicode/utf8"
 )
 
+func init() {
+	RegisterRule("len", &lengthRule{})
+}
+
 var ErrLengthParamCount = errors.New("This rule needs two mandatory params, operator and value")
 
 // lengthRule struct holds Validate() method to satisfy the Validator interface.

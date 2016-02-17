@@ -7,7 +7,7 @@ import (
 	"bitbucket.org/syb-devs/goth/validate"
 )
 
-func TestLength(t *testing.T) {
+func Testlen(t *testing.T) {
 	var tests = []struct {
 		input         interface{}
 		valid         bool
@@ -16,7 +16,7 @@ func TestLength(t *testing.T) {
 	}{
 		{
 			input: struct {
-				Name string `validate:"length:>=,3,zz"`
+				Name string `validate:"len:>=,3,zz"`
 			}{
 				Name: "Jon",
 			},
@@ -24,7 +24,7 @@ func TestLength(t *testing.T) {
 		},
 		{
 			input: struct {
-				Name string `validate:"length:>=,x"`
+				Name string `validate:"len:>=,x"`
 			}{
 				Name: "Jon",
 			},
@@ -32,7 +32,7 @@ func TestLength(t *testing.T) {
 		},
 		{
 			input: struct {
-				Name string `validate:"length:3"`
+				Name string `validate:"len:3"`
 			}{
 				Name: "Jon",
 			},
@@ -40,7 +40,7 @@ func TestLength(t *testing.T) {
 		},
 		{
 			input: struct {
-				Name string `validate:"length:=,3"`
+				Name string `validate:"len:=,3"`
 			}{
 				Name: "Jon",
 			},
@@ -48,7 +48,7 @@ func TestLength(t *testing.T) {
 		},
 		{
 			input: struct {
-				Name string `validate:"length:<,7"`
+				Name string `validate:"len:<,7"`
 			}{
 				Name: "Basil",
 			},
@@ -56,15 +56,15 @@ func TestLength(t *testing.T) {
 		},
 		{
 			input: struct {
-				Name string `validate:"length:=,3"`
+				Name string `validate:"len:=,3"`
 			}{
 				Name: "Johnny",
 			},
-			errorPatterns: map[string][]string{"Name": []string{"The field Name should have a length equal to 3. Actual length: 6"}},
+			errorPatterns: map[string][]string{"Name": []string{"The field Name should have a len equal to 3. Actual len: 6"}},
 		},
 		{
 			input: struct {
-				Name string `validate:"length:>=,3|length:<=,10"`
+				Name string `validate:"len:>=,3|len:<=,10"`
 			}{
 				Name: "Johnny",
 			},
@@ -72,7 +72,7 @@ func TestLength(t *testing.T) {
 		},
 		{
 			input: struct {
-				Name string `validate:"length:x,3"`
+				Name string `validate:"len:x,3"`
 			}{
 				Name: "Johnny",
 			},
@@ -82,7 +82,10 @@ func TestLength(t *testing.T) {
 
 	for _, test := range tests {
 		v := validate.New()
-		err := v.Validate(test.input)
+		res := v.Validate(test.input)
+		err := res.LogicError
+		errs := res.FieldErrors
+
 		if test.logicErr != nil {
 			if err.Error() != test.logicErr.Error() {
 				t.Errorf("expecting logic error: %v, got: %v", test.logicErr, err)
@@ -90,7 +93,6 @@ func TestLength(t *testing.T) {
 		} else if err != nil {
 			t.Errorf(err.Error())
 		}
-		errs := v.Errors()
 		if test.valid && errs != nil && errs.Len() > 0 {
 			t.Errorf("expecting zero errors, found %s", errs.String())
 		}
@@ -99,13 +101,13 @@ func TestLength(t *testing.T) {
 			if errs == nil {
 				t.Errorf("validator did not return any errors, expected: %+v", test.errorPatterns)
 			} else {
-				findErrors(t, *errs, test.errorPatterns)
+				findErrors(t, errs, test.errorPatterns)
 			}
 		}
 	}
 }
 
-func findErrors(t *testing.T, errList validate.ErrList, patterns map[string][]string) {
+func findErrors4(t *testing.T, errList validate.FieldErrors, patterns map[string][]string) {
 	for field, patErrs := range patterns {
 		valErrs := errList[field]
 		for _, patErr := range patErrs {

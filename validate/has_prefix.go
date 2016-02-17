@@ -6,6 +6,10 @@ import (
 	"strings"
 )
 
+func init() {
+	RegisterRule("hasPrefix", &hasPrefixRule{})
+}
+
 var ErrHasPrefixParamCount = errors.New("This rule needs one mandatory parameter")
 
 // hasPrefixRule struct holds Validate() method to satisfy the Validator interface.

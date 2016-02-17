@@ -1,5 +1,3 @@
-// Copyright 2014 Simplify Your Bussiness S.L. All rights reserved.
-
 // Package validate implements validation of struct types using rules defined inside struct tags
 package validate
 
@@ -19,288 +17,185 @@ var (
 )
 
 var (
-	// TagName is used to specify the struct tag name that the validator should use
-	TagName = "validate"
-
-	// RuleSeparator is the character(s) used to separate different validation rules in the same tag
-	RuleSeparator = "|"
-
-	defaultValidator = New()
+	tagName       = "validate"
+	ruleSeparator = "|"
+	rules         = NewRuleMap()
 )
+
+// RegisterRule registers a rule in the default validator
+func RegisterRule(name string, rule Rule) {
+	rules.RegisterRule(name, rule)
+}
 
 // Rule represents a validation rule that will be applied to a struct field value.
 type Rule interface {
 	Validate(data interface{}, field string, params []string, namedParams map[string]string) (errorLogic, errorInput error)
 }
 
-// ErrList is used to store struct validation errors grouped by field name.
-type ErrList map[string][]error
+// RuleMap stores validation rules
+type RuleMap struct {
+	mu    sync.RWMutex
+	rules map[string]Rule
+}
 
-// String returns a literal representation of the error list.
-func (e ErrList) String() string {
-	str := ""
-	for field, errors := range e {
-		str = str + field + ": "
-		for _, err := range errors {
-			str = str + err.Error() + ", "
-		}
-		str = str + "\n"
+// NewRuleMap allocates and returns a RuleMap
+func NewRuleMap() *RuleMap {
+	return &RuleMap{
+		rules: make(map[string]Rule, 0),
 	}
-	return str
 }
 
-// Len returns the number of elements in the error list.
-func (e ErrList) Len() int {
-	return len(e)
+// RegisterRule registers a rule in the map
+func (rm *RuleMap) RegisterRule(name string, rule Rule) {
+	rm.mu.Lock()
+	rm.rules[name] = rule
+	rm.mu.Unlock()
 }
 
-// ruleMap stores validation rules that will be accessed by its name.
-type ruleMap map[string]Rule
-
-// fieldPrefix contains the field prefix for fields of nested structs.
-type fieldPrefix []string
-
-// push appends a prefix to the slice.
-func (fp *fieldPrefix) push(prefix string) {
-	*fp = append(*fp, prefix)
+// GetRule fetches a validation rule from the map
+func (rm *RuleMap) GetRule(name string) (Rule, bool) {
+	rm.mu.RLock()
+	defer rm.mu.RUnlock()
+	rule, ok := rm.rules[name]
+	return rule, ok
 }
 
-// pop returns the last prefix form the slice.
-func (fp *fieldPrefix) pop() (p string) {
-	*fp, p = (*fp)[:len(*fp)-1], (*fp)[len(*fp)-1]
-	return
+// Result represents the outcome of a validation
+type Result struct {
+	LogicError error
+	FieldErrors
 }
 
-// String returns a literal representation of the field prefix.
-func (fp *fieldPrefix) String() string {
-	ret := ""
-	for _, prefix := range *fp {
-		ret = ret + prefix + "."
-	}
-	return ret
+// OK returns true if the data validation was succesfull
+func (r *Result) OK() bool {
+	return r.LogicError == nil && len(r.FieldErrors) == 0
 }
 
 // Validator extracts and checks validation rules from struct tags
+// TODO(zareone) create a Rule cache?? map[reflect.Type]ruleParams
 type Validator struct {
-	registeredRules ruleMap
-	data            interface{}
-	errors          ErrList
-	logicError      error
-	mu              sync.RWMutex
-	tagName         string
-	fieldPrefix     fieldPrefix
-}
-
-// RegisterRule registers a validation rule in the default validator.
-func RegisterRule(name string, rule Rule) {
-	defaultValidator.RegisterRule(name, rule)
-}
-
-// Validate validates the given struct using the default validator and returns any logic error that might happen.
-// To get the actual validation errors, use the method Errors().
-func Validate(data interface{}) error {
-	return defaultValidator.Validate(data)
-}
-
-// SetTagName sets the name of the struct tag to extract validation rules from.
-func SetTagName(name string) {
-	defaultValidator.SetTagName(name)
-}
-
-// Zeroed validator returns a validator with all its fields initialised.
-func zeroedValidator() *Validator {
-	return &Validator{
-		registeredRules: make(ruleMap, 0),
-		errors:          make(ErrList, 0),
-		fieldPrefix:     make(fieldPrefix, 0),
-	}
+	*RuleMap
+	tagName       string
+	ruleSeparator string
 }
 
 // New returns a new validator, set up with the default rules and options.
 func New() *Validator {
 	v := zeroedValidator()
-	v.tagName = TagName
-	v.RegisterRule("length", &lengthRule{})
-	v.RegisterRule("regexp", &regexpRule{})
-	v.RegisterRule("contains", &containsRule{})
-	v.RegisterRule("hasPrefix", &hasPrefixRule{})
-	v.RegisterRule("hasSufix", &hasSufixRule{})
-
+	v.tagName = tagName
+	v.ruleSeparator = ruleSeparator
+	v.RuleMap = rules
 	return v
 }
 
-// SetTagName sets the name of the struct tag to extract validation rules from.
-func (v *Validator) SetTagName(name string) {
-	v.tagName = name
-}
-
-// RegisterRule registers a Rule in for this validator under the given name.
-func (v *Validator) RegisterRule(name string, rule Rule) {
-	v.mu.Lock()
-	defer v.mu.Unlock()
-	v.registeredRules[name] = rule
-}
-
-// Copy returns a copy new validator using the same configuration.
-func (v *Validator) Copy() *Validator {
-	vc := zeroedValidator()
-	vc.tagName = v.tagName
-	vc.registeredRules = v.registeredRules
-
-	return vc
-}
-
-// getRule retrieves a rule from the rule map using a given name.
-func (v *Validator) getRule(name string) (Rule, error) {
-	v.mu.RLock()
-	defer v.mu.RUnlock()
-	r := v.registeredRules[name]
-	if r != nil {
-		return r, nil
+func zeroedValidator() *Validator {
+	return &Validator{
+		RuleMap: NewRuleMap(),
 	}
-	return nil, ErrRuleNotFound
 }
 
 // Validate runs the actual validation of the struct, applying the rules registered in the validator,
 // returning any logic error that might happen.
 // To get the actual validation errors, use the method Errors().
-func (v *Validator) Validate(data interface{}) error {
+func (v *Validator) Validate(data interface{}) Result {
+	result := Result{
+		FieldErrors: make(FieldErrors, 0),
+	}
 	sv := reflect.ValueOf(data)
-	if sv.Kind() == reflect.Ptr && !sv.IsNil() {
-		return v.Validate(sv.Elem().Interface())
+	for sv.Kind() == reflect.Ptr {
+		sv = sv.Elem()
 	}
-	if !IsStruct(data) {
-		return ErrStructExpected
+	if sv.Kind() != reflect.Struct {
+		result.LogicError = ErrStructExpected
+		return result
 	}
 
-	v.data = data
-	numFields := reflect.ValueOf(v.data).NumField()
-
+	numFields := sv.NumField()
 	for curField := 0; curField < numFields; curField++ {
-		err := v.validateField(curField)
-		if err != nil {
-			return err
+		field := sv.Type().Field(curField)
+		if !fieldIsExported(field) {
+			continue
 		}
+		rules := parseRulesTag(field.Name, field.Tag.Get(v.tagName), v.ruleSeparator)
+
+		// fieldValue := sv.Field(curField).Interface()
+		fieldErrs, err := v.checkRules(sv.Interface(), rules)
+		if err != nil {
+			result.LogicError = err
+			return result
+		}
+		result.AppendErrors(field.Name, fieldErrs...)
 	}
-	return nil
+	return result
 }
 
-// validateField validates a single field of the struct and returns a logic error if something goes wrong.
-func (v *Validator) validateField(i int) error {
-
-	elem := reflect.TypeOf(v.data).Field(i)
-	if !fieldIsExported(elem) {
-		return nil
-	}
-	fieldName := elem.Name
-
-	//TODO: check if field is a pointer
-	fieldVal := reflect.ValueOf(v.data).Field(i).Interface()
-	if IsStruct(fieldVal) {
-		v.fieldPrefix.push(fieldName)
-		defer v.fieldPrefix.pop()
-
-		err := v.Validate(fieldVal)
-
-		if err != nil {
-			return err
+func (v *Validator) checkRules(data interface{}, rules []ruleParams) ([]error, error) {
+	var errs []error
+	for _, ruleData := range rules {
+		ruleValidator, ok := v.GetRule(ruleData.RuleName)
+		if !ok {
+			return errs, ErrRuleNotFound
 		}
-		return nil
+
+		LogicError, err := ruleValidator.Validate(
+			data,
+			ruleData.FieldName,
+			ruleData.Params,
+			ruleData.NamedParams)
+		if LogicError != nil {
+			return errs, err
+		}
+		if err != nil {
+			errs = append(errs, err)
+		}
 	}
+	return errs, nil
+}
 
-	tag := elem.Tag.Get(v.tagName)
-	if tag == "" {
-		return nil
-	}
+// parseRulesTag parses a struct tag contents and extracts validation rules from it
+func parseRulesTag(fieldName, tag, sep string) []ruleParams {
+	var ret []ruleParams
+	rules := strings.Split(tag, sep)
+	for _, rule := range rules {
+		ruleData := newRuleParams()
+		ruleData.FieldName = fieldName
+		var paramsText string
+		unpack(strings.SplitN(rule, ":", 2), &ruleData.RuleName, &paramsText)
 
-	for _, ruleStr := range strings.Split(tag, RuleSeparator) {
-		var j = strings.Index(tag, ":")
-		var ruleParamsStr = ruleStr[j+1:]
-		var namedParams map[string]string
-		var ruleParams []string
-
-		var ruleName = ruleStr[0:j]
-
-		namedParams = make(map[string]string, 0)
-
-		for _, paramPart := range strings.Split(ruleParamsStr, ",") {
-			isNamed := strings.Index(paramPart, ":") != -1
-			if isNamed {
-				var tmpParam = strings.Split(paramPart, ":")
-				if len(tmpParam) != 2 {
-					return ErrInvalidParamFormat
-				}
-				namedParams[tmpParam[0]] = tmpParam[1]
+		params := strings.Split(paramsText, ",")
+		for _, param := range params {
+			if strings.Index(param, ":") != -1 {
+				var paramName, paramValue string
+				unpack(strings.SplitN(param, ":", 2), &paramName, &paramValue)
+				ruleData.NamedParams[paramName] = paramValue
 			} else {
-				ruleParams = append(ruleParams, paramPart)
+				ruleData.Params = append(ruleData.Params, param)
 			}
 		}
-
-		var fieldCheck = func() {
-			rule, err := v.getRule(ruleName)
-			if err != nil {
-				v.logicError = err
-				return
-			}
-
-			logicErr, inputErr := rule.Validate(v.data, fieldName, ruleParams, namedParams)
-			if logicErr != nil {
-				v.logicError = logicErr
-				return
-			}
-			if inputErr != nil {
-				key := v.fieldPrefix.String() + fieldName
-				v.errors[key] = append(v.errors[key], inputErr)
-			}
-		}
-
-		v.safeExec(fieldCheck)
-		if v.logicError != nil {
-			return v.logicError
-		}
+		ret = append(ret, *ruleData)
 	}
-	return nil
+	return ret
 }
 
-// Errors returns a list of validation errors.
-func (v *Validator) Errors() *ErrList {
-	errors := v.errors
-	if len(errors) == 0 {
-		return nil
+// unpack stores the contents of a slice of strings in separate strings passed by reference
+func unpack(s []string, vars ...*string) {
+	for i, str := range s {
+		*vars[i] = str
 	}
-	return &errors
 }
 
-// ErrorsByField returns a list of validation errors for a given field.
-func (v *Validator) ErrorsByField(field string) *[]error {
-	if field == "" {
-		return nil
-	}
-
-	errors := v.errors[field]
-	if errors == nil {
-		return nil
-	}
-	return &errors
+// ruleParams holds parameters for a given validation rule
+type ruleParams struct {
+	RuleName    string
+	FieldName   string
+	Params      []string
+	NamedParams map[string]string
 }
 
-type safeFunc func()
-
-// safeExec executes a given function and stores any recovered panic as a logic error inside de validator.
-func (v *Validator) safeExec(f safeFunc) {
-	defer func() {
-		if recErr := recover(); recErr != nil {
-			switch errv := recErr.(type) {
-			case string:
-				v.logicError = errors.New(errv)
-			case error:
-				v.logicError = errv
-			default:
-				v.logicError = fmt.Errorf("Panic recovered with type: %+v", recErr)
-			}
-		}
-	}()
-	f()
+func newRuleParams() *ruleParams {
+	return &ruleParams{
+		NamedParams: map[string]string{},
+	}
 }
 
 // IsStruct checks if the given value is a struct of a pointer to a struct.
@@ -340,4 +235,38 @@ func mustStringify(value interface{}) string {
 		panic(ErrUnsupportedType)
 	}
 	return strVal
+}
+
+// FieldErrors is used to store struct validation errors grouped by field name.
+type FieldErrors map[string][]error
+
+// AppendErrors adds an error associated with the given field
+func (e FieldErrors) AppendErrors(field string, errs ...error) {
+	if len(errs) == 0 {
+		return
+	}
+	e[field] = append(e[field], errs...)
+}
+
+// FieldErrors returns the errors registered for a given field
+func (e FieldErrors) FieldErrors(field string) []error {
+	return e[field]
+}
+
+// String returns a literal representation of the error list.
+func (e FieldErrors) String() string {
+	str := ""
+	for field, errors := range e {
+		str = str + field + ": "
+		for _, err := range errors {
+			str = str + err.Error() + ", "
+		}
+		str = str + "\n"
+	}
+	return str
+}
+
+// Len returns the number of elements in the error list.
+func (e FieldErrors) Len() int {
+	return len(e)
 }

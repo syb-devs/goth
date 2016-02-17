@@ -1,96 +1,70 @@
 package validate_test
 
 import (
+	"reflect"
 	"testing"
 
 	"bitbucket.org/syb-devs/goth/validate"
 )
 
 func TestValidate(t *testing.T) {
-	type data struct {
-		Field string `validate:"length:>,4" `
+	data := struct {
+		Name string `validate:"ruleA:a,b,c,foo:bar|ruleB:1,2,k:v"`
+	}{
+		Name: "John Doe",
 	}
 
-	v := validate.New()
-	err := v.Validate(data{})
+	ruleA := &dummyRule{}
+	ruleB := &dummyRule{}
+	validate.RegisterRule("ruleA", ruleA)
+	validate.RegisterRule("ruleB", ruleB)
 
-	if err != nil {
-		t.Errorf(err.Error())
+	val := validate.New()
+	val.Validate(data)
+
+	ruleAExpected := funcData{
+		data:        data,
+		field:       "Name",
+		params:      []string{"a", "b", "c"},
+		namedParams: map[string]string{"foo": "bar"},
+	}
+	ruleBExpected := funcData{
+		data:        data,
+		field:       "Name",
+		params:      []string{"1", "2"},
+		namedParams: map[string]string{"k": "v"},
 	}
 
-	// Validate passing a pointer
-	err = v.Validate(&data{})
-
-	if err != nil {
-		t.Errorf(err.Error())
+	if !reflect.DeepEqual(ruleAExpected, ruleA.fdata) {
+		t.Errorf("expecting function data to be: %#v, but is: %#v", ruleAExpected, ruleA.fdata)
 	}
-}
-
-func TestEmptyValidationTag(t *testing.T) {
-	type data struct {
-		Field string
-	}
-
-	v := validate.New()
-	err := v.Validate(data{})
-
-	if err != nil {
-		t.Errorf("Error during validation")
-	}
-}
-
-func TestNotStruct(t *testing.T) {
-	v := validate.New()
-	err := v.Validate("string")
-
-	if err != validate.ErrStructExpected {
-		t.Errorf("Expected: %s, got: %s", validate.ErrStructExpected, err)
+	if !reflect.DeepEqual(ruleBExpected, ruleB.fdata) {
+		t.Errorf("expecting function data to be: %#v, but is: %#v", ruleBExpected, ruleB.fdata)
 	}
 }
 
-func TestEmbeddedStruct(t *testing.T) {
-	type embed struct {
-		InnerField string `validate:"length:>,4" `
-	}
-
-	type data struct {
-		OuterField embed
-	}
-
-	v := validate.New()
-	err := v.Validate(data{OuterField: embed{InnerField: "foo"}})
-	if err != nil {
-		t.Error(err.Error())
-	}
-
-	errors := v.ErrorsByField("OuterField.InnerField")
-	if errors == nil {
-		t.Fatalf("No errors retrieved for OuterField.InnerField")
-	}
-	numErrors := len(*errors)
-
-	if numErrors != 1 {
-		t.Errorf("Expected exactly 1 validation error, got %d", numErrors)
-	}
+type funcData struct {
+	data        interface{}
+	field       string
+	params      []string
+	namedParams map[string]string
 }
 
-type foo struct{}
-
-var isStructTests = []struct {
-	data     interface{} // input
-	expected bool        // expected result
-}{
-	{"gopher", false},
-	{1845, false},
-	{foo{}, true},
-	{&foo{}, true},
+type dummyRule struct {
+	fdata funcData
 }
 
-func TestIsStruct(t *testing.T) {
-	for _, test := range isStructTests {
-		actual := validate.IsStruct(test.data)
-		if test.expected != actual {
-			t.Errorf("IsStruct(%v): expected %v, actual %v", test.data, test.expected, actual)
-		}
+func (r *dummyRule) Validate(
+	data interface{},
+	field string,
+	params []string,
+	namedParams map[string]string) (errorLogic, errorInput error,
+) {
+	r.fdata = funcData{
+		data:        data,
+		field:       field,
+		params:      params,
+		namedParams: namedParams,
 	}
+	return nil, nil
 }
