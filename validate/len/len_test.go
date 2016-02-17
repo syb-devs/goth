@@ -11,7 +11,7 @@ import (
 
 var findErrors = internal.FindErrors
 
-func Testlen(t *testing.T) {
+func TestLen(t *testing.T) {
 	var tests = []struct {
 		input         interface{}
 		valid         bool
@@ -60,11 +60,11 @@ func Testlen(t *testing.T) {
 		},
 		{
 			input: struct {
-				Name string `validate:"len:=,3"`
+				Name string `validate:"len:3"`
 			}{
 				Name: "Johnny",
 			},
-			errorPatterns: map[string][]string{"Name": []string{"The field Name should have a len equal to 3. Actual len: 6"}},
+			errorPatterns: map[string][]string{"Name": []string{"The field Name should have a length equal to 3. Actual length: 6"}},
 		},
 		{
 			input: struct {
@@ -81,6 +81,14 @@ func Testlen(t *testing.T) {
 				Name: "Johnny",
 			},
 			errorPatterns: map[string][]string{"Name": []string{"Invalid operator"}},
+		},
+		{
+			input: struct {
+				Name string `validate:"len:>,3"`
+			}{
+				Name: "Jon",
+			},
+			errorPatterns: map[string][]string{"Name": []string{"The field Name should have a length greater than 3. Actual length: 3"}},
 		},
 	}
 
