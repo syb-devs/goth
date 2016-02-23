@@ -21,8 +21,9 @@ type App struct {
 		database.Repository
 		*database.ResourceMap
 	}
-	Log log.Logger
-	Muxer
+	Log     log.Logger
+	muxer   Muxer
+	handler http.Handler
 	modules map[string]Module
 	mws     map[string]MiddlewareChain
 }
@@ -63,11 +64,23 @@ func (a *App) WrapHandlerFunc(h HandlerFunc, chainName string) Handler {
 	return a.WrapHandler(h, chainName)
 }
 
+// Handle registers a handler for a given method / path combination
+func (a *App) Handle(method, path string, h Handler) {
+	a.muxer.Handle(method, path, h)
+}
+
 // SetMuxer sets a Muxer for the App object
-func (a *App) SetMuxer(r Muxer) {
+func (a *App) SetMuxer(m Muxer) {
 	a.Lock()
 	defer a.Unlock()
-	a.Muxer = r
+	a.muxer = m
+}
+
+// SetHandler sets a Handler for the App object
+func (a *App) SetHandler(h http.Handler) {
+	a.Lock()
+	defer a.Unlock()
+	a.handler = h
 }
 
 // NewContextHTTP creates a new context for the given HTTP request
@@ -89,7 +102,7 @@ func (a *App) Run() {
 	a.Log.Infof("### %s is starting...\n", a.name)
 	a.bootstrap()
 	a.Log.Infof("listening on port 8080...\n")
-	err := http.ListenAndServe(":8080", a)
+	err := http.ListenAndServe(":8080", a.handler)
 	a.Log.Error(err)
 	os.Exit(1)
 }

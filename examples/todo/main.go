@@ -7,33 +7,36 @@ import (
 	"bitbucket.org/syb-devs/goth/app"
 	"bitbucket.org/syb-devs/goth/app/middleware/buffer"
 	"bitbucket.org/syb-devs/goth/app/middleware/chain"
-	"bitbucket.org/syb-devs/goth/app/middleware/cors"
 	"bitbucket.org/syb-devs/goth/app/middleware/recovr"
 	"bitbucket.org/syb-devs/goth/app/middleware/timer"
 	"bitbucket.org/syb-devs/goth/app/mux/httptreemux"
 	"bitbucket.org/syb-devs/goth/database"
 	"bitbucket.org/syb-devs/goth/database/driver/mongodb"
 	"bitbucket.org/syb-devs/goth/rest"
-	// _ "bitbucket.org/syb-devs/goth/user"
 
 	"github.com/syb-devs/dockerlink"
+
+	"github.com/rs/cors"
 )
 
 func main() {
 	myApp := app.NewApp("Goth example App v0.1.0")
 
 	// HTTP setup
-	myApp.SetMuxer(httptreemux.New(myApp.NewContextHTTP))
+	mux := httptreemux.New(myApp.NewContextHTTP)
+	myApp.SetMuxer(mux)
 
 	corsOpts := cors.Options{
 		Debug:          false,
 		AllowedHeaders: []string{"*"},
 	}
+	handler := cors.New(corsOpts).Handler(mux)
+	myApp.SetHandler(handler)
+
 	mainChain := chain.New(
 		buffer.New(),
 		recovr.New(),
 		timer.New(),
-		cors.New(corsOpts).Handler,
 	)
 	myApp.AddChain(mainChain, "main")
 

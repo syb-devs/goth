@@ -1,9 +1,5 @@
 package app
 
-import (
-	"net/http"
-)
-
 // Handler interface is implemented by the App handlers, which are Context aware
 // and can return errors to be handled by the App
 type Handler interface {
@@ -28,7 +24,6 @@ func (p URLParams) ByName(name string) string {
 
 // Muxer interface is used to bind a handler to a route
 type Muxer interface {
-	http.Handler
 	Handle(verb, path string, h Handler)
 }
 
