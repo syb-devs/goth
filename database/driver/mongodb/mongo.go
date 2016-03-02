@@ -85,3 +85,8 @@ func (r *Resource) SetID(ID interface{}) error {
 func (r *Resource) GetID() interface{} {
 	return r.ID
 }
+
+// GetIDString returns a string representation of the Resource ID
+func (r *Resource) GetIDString() string {
+	return r.ID.Hex()
+}

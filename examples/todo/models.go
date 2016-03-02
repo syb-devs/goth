@@ -2,11 +2,13 @@ package main
 
 import (
 	"bitbucket.org/syb-devs/goth/database/driver/mongodb"
+	"bitbucket.org/syb-devs/goth/user"
 
 	"gopkg.in/mgo.v2/bson"
 )
 
 type User struct {
+	user.User        `bson:",inline" json:",inline"`
 	mongodb.Resource `bson:",inline" json:",inline"`
 	Name             string          `bson:"name" json:"name"`
 	TodoIDs          []bson.ObjectId `bson:"todoIds" json:"-" rel:"todos,Todos"`

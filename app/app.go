@@ -66,6 +66,7 @@ func (a *App) WrapHandlerFunc(h HandlerFunc, chainName string) Handler {
 
 // Handle registers a handler for a given method / path combination
 func (a *App) Handle(method, path string, h Handler) {
+	log.Debugf("registering route %s %s", method, path)
 	a.muxer.Handle(method, path, h)
 }
 

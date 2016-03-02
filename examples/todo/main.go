@@ -12,7 +12,9 @@ import (
 	"bitbucket.org/syb-devs/goth/app/mux/httptreemux"
 	"bitbucket.org/syb-devs/goth/database"
 	"bitbucket.org/syb-devs/goth/database/driver/mongodb"
+	"bitbucket.org/syb-devs/goth/log"
 	"bitbucket.org/syb-devs/goth/rest"
+	"bitbucket.org/syb-devs/goth/user"
 
 	"github.com/syb-devs/dockerlink"
 
@@ -37,13 +39,12 @@ func main() {
 		buffer.New(),
 		recovr.New(),
 		timer.New(),
+		errMiddleware,
 	)
 	myApp.AddChain(mainChain, "main")
+	myApp.AddChain(mainChain, "pub")
 
 	myApp.Handle("GET", "/", myApp.WrapHandlerFunc(rootHandler, "main"))
-	myApp.Handle("GET", "/hello", myApp.WrapHandlerFunc(helloJSONHandler, "main"))
-	myApp.Handle("GET", "/debug/vars", myApp.WrapHandlerFunc(expvarHandler, "main"))
-	// myApp.Handle("GET", "/users", myApp.WrapHandlerFunc(listUsers, "main"))
 
 	ps := database.ConnectionParams{
 		"url":      getMongoURI(),
@@ -61,6 +62,8 @@ func main() {
 	myApp.DB.RegisterResource(User{}, "users", "")
 	myApp.DB.RegisterResource(Profile{}, "profiles", "")
 
+	user.RegisterType(&User{}, "username")
+
 	rest.Register(myApp, &Todo{}, "todos")
 	rest.Register(myApp, &User{}, "users")
 	rest.Register(myApp, &Profile{}, "profiles")
@@ -77,4 +80,19 @@ func getMongoURI() string {
 		return fmt.Sprintf("%s:%d", link.Address, link.Port)
 	}
 	panic("mongodb connection not found, use MONGO_URL env var or a docker link with mongodb name")
+}
+
+func errMiddleware(h app.Handler) app.Handler {
+	f := func(ctx *app.Context) error {
+		err := h.Serve(ctx)
+		if err != nil {
+			log.Errorf(
+				"error serving %s %s: %v",
+				ctx.Request.Method,
+				ctx.Request.URL.String(),
+				err)
+		}
+		return nil
+	}
+	return app.HandlerFunc(f)
 }

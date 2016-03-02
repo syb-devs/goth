@@ -2,9 +2,9 @@ package user
 
 import (
 	"errors"
-	"time"
 
 	"bitbucket.org/syb-devs/goth/app"
+	"bitbucket.org/syb-devs/goth/auth/jwt"
 	"bitbucket.org/syb-devs/goth/database"
 )
 
@@ -16,65 +16,52 @@ var (
 	ErrInvalidUserPass = errors.New("username and/or password is not valid")
 )
 
-var jwtExp = 24 * time.Hour
-
 type retJWT struct {
 	Token string `json:"token"`
 }
 
 func register(ctx *app.Context) error {
-	rUser, err := decodeUser(ctx)
+	user := newUser(ctx)
+	err := ctx.Decode(user)
 	if err != nil {
 		return err
 	}
-
-	user := &User{}
-	user.SetUserName(rUser.Username)
-	user.GeneratePassword([]byte(rUser.Password))
+	user.SetPassword(user.GetPassword())
 
 	if err = ctx.App.DB.Insert(user); err != nil {
 		return err
 	}
-	jwt, err := newJWT(user, jwtExp)
-	if err != nil {
-		return err
-	}
-	return ctx.Encode(retJWT{jwt})
+	return ctx.Encode(user)
 }
 
 func login(ctx *app.Context) error {
-	rUser, err := decodeUser(ctx)
+	loginData := &struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}{}
+	err := ctx.Decode(loginData)
 	if err != nil {
 		return err
 	}
-	user := &User{}
-	query := database.NewQ(QueryLogin(rUser.Username))
-	err = ctx.App.DB.FindOne(user, query)
+	if loginData.Username == "" || len(loginData.Password) == 0 {
+		return ErrEmptyUserPass
+	}
+	user := newUser(ctx).(Interface)
+	err = ctx.App.DB.FindOne(user, database.NewQ(
+		database.Dict{usernameDBField: loginData.Username}))
 	if err != nil {
 		return err
 	}
-	if err = user.Check(rUser.Username, []byte(rUser.Password)); err != nil {
+	if err = user.CheckAuth(loginData.Username, []byte(loginData.Password)); err != nil {
 		return ErrInvalidUserPass
 	}
-	jwt, err := newJWT(user, jwtExp)
+	token, err := jwt.New(user, nil)
 	if err != nil {
 		return err
 	}
-	return ctx.Encode(retJWT{jwt})
+	return ctx.Encode(retJWT{token})
 }
 
-type reqUser struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
-func decodeUser(ctx *app.Context) (*reqUser, error) {
-	ru := &reqUser{}
-	if err := ctx.Decode(ru); err != nil {
-		return nil, err
-	}
-	if ru.Username == "" || len(ru.Password) == 0 {
-		return nil, ErrEmptyUserPass
-	}
-	return ru, nil
+func newUser(ctx *app.Context) Interface {
+	return ctx.App.DB.CreateResource(userType).(Interface)
 }
