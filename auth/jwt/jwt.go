@@ -10,7 +10,7 @@ var (
 	// Secret is the key used to sign the JWT tokens
 	Secret []byte
 	// Duration used for the token expiration
-	Duration time.Duration
+	Duration = 7 * 24 * time.Hour
 )
 
 type user interface {
