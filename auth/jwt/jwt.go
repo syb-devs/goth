@@ -8,7 +8,7 @@ import (
 
 var (
 	// Secret is the key used to sign the JWT tokens
-	Secret string
+	Secret []byte
 	// Duration used for the token expiration
 	Duration time.Duration
 )
@@ -27,7 +27,7 @@ func New(user user, claims map[string]interface{}) (string, error) {
 			token.Claims[claim] = val
 		}
 	}
-	return token.SignedString([]byte(Secret))
+	return token.SignedString(Secret)
 }
 
 // GetKeyFunc is used to get the key used to sign the JSON Web Tokens
