@@ -92,7 +92,7 @@ func (h *BaseCRUD) Retrieve(ctx *app.Context) error {
 	if err != nil {
 		return err
 	}
-	err = h.expand(ctx, res)
+	err = expandResource(ctx, res)
 	if err != nil {
 		return err
 	}
@@ -144,7 +144,7 @@ func (h *BaseCRUD) List(ctx *app.Context) error {
 	if err != nil {
 		return err
 	}
-	err = h.expandList(ctx, list)
+	err = expandResourceList(ctx, list)
 	if err != nil {
 		return err
 	}
@@ -174,7 +174,7 @@ func (h *BaseCRUD) queryFromURL(ctx *app.Context) (database.Query, error) {
 	return database.NewQuery(nil, limit, skip, sort...), nil
 }
 
-func (h *BaseCRUD) expand(ctx *app.Context, res database.Resource) error {
+func expandResource(ctx *app.Context, res database.Resource) error {
 	rels := ctx.Request.URL.Query()["expand"]
 	if len(rels) == 0 {
 		return nil
@@ -182,13 +182,13 @@ func (h *BaseCRUD) expand(ctx *app.Context, res database.Resource) error {
 	return ctx.App.DB.FetchRelated(res, rels...)
 }
 
-func (h *BaseCRUD) expandList(ctx *app.Context, list interface{}) error {
+func expandResourceList(ctx *app.Context, list interface{}) error {
 	resList, err := database.AsResourceList(list)
 	if err != nil {
 		return err
 	}
 	for _, res := range resList {
-		err := h.expand(ctx, res)
+		err := expandResource(ctx, res)
 		if err != nil {
 			return err
 		}
