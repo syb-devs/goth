@@ -20,7 +20,15 @@ var (
 // Resource represents an entity that can be persisted to database.
 type Resource interface {
 	GetID() interface{}
-	SetID(interface{}) error
+	SetID(interface{})
+	GetOwnerID() interface{}
+	SetOwnerID(interface{})
+	BelongsTo(ResourceOwner) bool
+}
+
+// ResourceOwner represents the owner of a Resource
+type ResourceOwner interface {
+	GetID() interface{}
 }
 
 // ResourceList is an slice of Resource.

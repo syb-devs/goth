@@ -4,7 +4,6 @@ import (
 	"encoding/gob"
 
 	"bitbucket.org/syb-devs/goth/database"
-
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -71,14 +70,25 @@ func (c *Conn) Map() *database.ResourceMap {
 
 // Resource implements the Resource interface for MongoDB
 type Resource struct {
-	ID                bson.ObjectId `json:"id" bson:"_id"`
+	ID                bson.ObjectId `bson:"_id" json:"id"`
+	OwnerID           bson.ObjectId `bson:"ownerId,omitempty" json:"ownerId"`
 	database.DeleteTS `json:",inline" bson:",inline"`
 }
 
 // SetID sets the ID for the resource
-func (r *Resource) SetID(ID interface{}) error {
-	r.ID = ID.(bson.ObjectId)
-	return nil
+func (r *Resource) SetID(ID interface{}) {
+	r.ID = mongoID(ID)
+}
+
+func mongoID(ID interface{}) bson.ObjectId {
+	switch ID := ID.(type) {
+	case string:
+		return bson.ObjectIdHex(ID)
+	case bson.ObjectId:
+		return ID
+	default:
+		panic("invalid type for bson.ObjectId")
+	}
 }
 
 // GetID returns the ID for the resoruce
@@ -89,4 +99,23 @@ func (r *Resource) GetID() interface{} {
 // GetIDString returns a string representation of the Resource ID
 func (r *Resource) GetIDString() string {
 	return r.ID.Hex()
+}
+
+// SetOwnerID sets the Owner ID of the resource
+func (r *Resource) SetOwnerID(ID interface{}) {
+	r.OwnerID = mongoID(ID)
+}
+
+// GetOwnerID returns the Owner ID of the resource
+func (r *Resource) GetOwnerID() interface{} {
+	return r.OwnerID
+}
+
+// BelongsTo checks if the resource belongs to (is ownbed by) another resource
+func (r *Resource) BelongsTo(ow database.ResourceOwner) bool {
+	mongoID, ok := ow.GetID().(bson.ObjectId)
+	if !ok {
+		return false
+	}
+	return r.GetOwnerID().(bson.ObjectId) == mongoID
 }
