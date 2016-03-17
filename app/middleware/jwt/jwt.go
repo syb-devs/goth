@@ -1,6 +1,7 @@
 package jwt
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -21,16 +22,16 @@ type errorHandler func(w http.ResponseWriter, r *http.Request, err error)
 // be treated as an error.  An empty string should be returned in that case.
 type TokenExtractor func(r *http.Request) (string, error)
 
+// TokenProcessor is a function that takes a context and the decoded token
+// and stores the token or any of its claims where needed
+type TokenProcessor func(ctx *app.Context, token *jwt.Token) error
+
 // Options is a struct for specifying configuration options for the middleware.
 type Options struct {
 	// The function that will return the Key to validate the JWT.
 	// It can be either a shared secret or a public key.
 	// Default value: nil
 	ValidationKeyGetter jwt.Keyfunc
-	// The name of the property in the request where the user information
-	// from the JWT will be stored.
-	// Default value: "user"
-	UserProperty string
 	// The function that will be called when there's an error validating the token
 	// Default value:
 	ErrorHandler errorHandler
@@ -40,6 +41,9 @@ type Options struct {
 	// A function that extracts the token from the request
 	// Default: FromAuthHeader (i.e., from Authorization header as bearer token)
 	Extractor TokenExtractor
+	// A function that processes the parsed token as needed (storing it, retrieving the user...)
+	// Default: nil
+	TokenProcessor TokenProcessor
 	// Debug flag turns on debugging output
 	// Default: false
 	Debug bool
@@ -71,16 +75,16 @@ func New(options ...Options) *JWTMiddleware {
 		opts = options[0]
 	}
 
-	if opts.UserProperty == "" {
-		opts.UserProperty = "user"
-	}
-
 	if opts.ErrorHandler == nil {
 		opts.ErrorHandler = OnError
 	}
 
 	if opts.Extractor == nil {
 		opts.Extractor = FromAuthHeader
+	}
+
+	if opts.TokenProcessor == nil {
+		opts.TokenProcessor = ToContextKey
 	}
 
 	return &JWTMiddleware{
@@ -125,6 +129,13 @@ func FromAuthHeader(r *http.Request) (string, error) {
 	}
 
 	return authHeaderParts[1], nil
+}
+
+// ToContextKey is a TokenProcessor function which stores the parsed JWT Token
+// in the context k/v store under the key jwt
+func ToContextKey(ctx *app.Context, token *jwt.Token) error {
+	ctx.Set("jwt", token)
+	return nil
 }
 
 // FromParameter returns a function that extracts the token from the specified
@@ -199,14 +210,11 @@ func (m *JWTMiddleware) CheckJWT(ctx *app.Context) error {
 
 	// Check if the parsed token is valid...
 	if !parsedToken.Valid {
-		return fmt.Errorf("Token is invalid")
+		return errors.New("Token is invalid")
 	}
 
 	ctx.App.Log.Debugf("JWT: %v", parsedToken)
 
-	// If we get here, everything worked and we can set the
-	// user property in context.
-	ctx.Set(m.Options.UserProperty, parsedToken)
-
-	return nil
+	// If we get here, everything worked and we can invoke the token processor function
+	return m.Options.TokenProcessor(ctx, parsedToken)
 }

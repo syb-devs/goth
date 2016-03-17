@@ -114,7 +114,7 @@ func (h *BaseCRUD) Create(ctx *app.Context) error {
 	if err != nil {
 		return err
 	}
-	res.SetOwnerID(ctx.UserID)
+	res.SetOwnerID(ctx.User.GetID())
 	err = ctx.App.DB.Insert(res)
 	if err != nil {
 		return err

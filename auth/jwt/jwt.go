@@ -1,7 +1,12 @@
 package jwt
 
 import (
+	"errors"
+	"reflect"
 	"time"
+
+	"bitbucket.org/syb-devs/goth/app"
+	"bitbucket.org/syb-devs/goth/database"
 
 	jwt "github.com/dgrijalva/jwt-go"
 )
@@ -11,6 +16,9 @@ var (
 	Secret []byte
 	// Duration used for the token expiration
 	Duration = 7 * 24 * time.Hour
+
+	// ErrInvalidUserID is returned when a user ID is not found
+	ErrInvalidUserID = errors.New("no valid user ID found on request context store")
 )
 
 type user interface {
@@ -33,4 +41,43 @@ func New(user user, claims map[string]interface{}) (string, error) {
 // GetKeyFunc is used to get the key used to sign the JSON Web Tokens
 func GetKeyFunc(t *jwt.Token) (interface{}, error) {
 	return Secret, nil
+}
+
+// TokenProcessorOptions is a struct for specifying configuration options for the middleware.
+type TokenProcessorOptions struct {
+	// The name of the property in the request where the user information
+	// from the JWT will be stored.
+	// Default value: "user"
+	UserProperty string
+	UserType     interface{}
+}
+
+// NewTokenProcessorFunc allocates and returns a TokenProcessor function
+// which extracts the user ID from theparsed token, retrieves the user
+// from database and stores it in the context
+func NewTokenProcessorFunc(options ...TokenProcessorOptions) func(ctx *app.Context, token *jwt.Token) error {
+	var opts TokenProcessorOptions
+	if len(options) == 0 {
+		opts = TokenProcessorOptions{}
+	} else {
+		opts = options[0]
+	}
+	if opts.UserProperty == "" {
+		opts.UserProperty = "user"
+	}
+	userType := reflect.TypeOf(opts.UserType)
+
+	return func(ctx *app.Context, token *jwt.Token) error {
+		userID := token.Claims[opts.UserProperty]
+		if userID == nil {
+			return ErrInvalidUserID
+		}
+		user := ctx.App.DB.CreateResource(userType).(database.Resource)
+		err := ctx.App.DB.Get(userID, user)
+		if err != nil {
+			return err
+		}
+		ctx.User = user.(app.User)
+		return nil
+	}
 }
