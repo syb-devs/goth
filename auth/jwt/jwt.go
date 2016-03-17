@@ -21,6 +21,8 @@ var (
 	ErrInvalidUserID = errors.New("no valid user ID found on request context store")
 )
 
+const userIDField = "userId"
+
 type user interface {
 	GetID() interface{}
 }
@@ -29,7 +31,7 @@ type user interface {
 func New(user user, claims map[string]interface{}) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	token.Claims["exp"] = time.Now().Add(Duration).Unix()
-	token.Claims["userId"] = user.GetID()
+	token.Claims[userIDField] = user.GetID()
 	if claims != nil {
 		for claim, val := range claims {
 			token.Claims[claim] = val
@@ -45,11 +47,7 @@ func GetKeyFunc(t *jwt.Token) (interface{}, error) {
 
 // TokenProcessorOptions is a struct for specifying configuration options for the middleware.
 type TokenProcessorOptions struct {
-	// The name of the property in the request where the user information
-	// from the JWT will be stored.
-	// Default value: "user"
-	UserProperty string
-	UserType     interface{}
+	UserType interface{}
 }
 
 // NewTokenProcessorFunc allocates and returns a TokenProcessor function
@@ -62,13 +60,10 @@ func NewTokenProcessorFunc(options ...TokenProcessorOptions) func(ctx *app.Conte
 	} else {
 		opts = options[0]
 	}
-	if opts.UserProperty == "" {
-		opts.UserProperty = "user"
-	}
 	userType := reflect.TypeOf(opts.UserType)
 
 	return func(ctx *app.Context, token *jwt.Token) error {
-		userID := token.Claims[opts.UserProperty]
+		userID := token.Claims[userIDField]
 		if userID == nil {
 			return ErrInvalidUserID
 		}
