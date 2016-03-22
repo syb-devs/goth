@@ -113,6 +113,9 @@ func (r *Resource) GetOwnerID() interface{} {
 
 // BelongsTo checks if the resource belongs to (is ownbed by) another resource
 func (r *Resource) BelongsTo(ow database.ResourceOwner) bool {
+	if r == nil || ow == nil {
+		return false
+	}
 	mongoID, ok := ow.GetID().(bson.ObjectId)
 	if !ok {
 		return false
