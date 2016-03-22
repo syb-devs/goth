@@ -32,7 +32,7 @@ func (r *Repository) Insert(d database.Resource) error {
 		return err
 	}
 	r.touch(d)
-	if r.IDGenerator != nil {
+	if r.IDGenerator != nil && d.GetID().(bson.ObjectId).Hex() == "" {
 		d.SetID(r.IDGenerator())
 	}
 	return r.Conn.C(colName).Insert(d)
