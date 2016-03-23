@@ -21,7 +21,6 @@ type Context struct {
 	http.ResponseWriter
 	URLParams URLParams
 	Codec     encoding.Codec
-	UserID    string
 	User      User
 	*kv.Store
 }
