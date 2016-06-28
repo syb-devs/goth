@@ -8,7 +8,7 @@ import (
 	"bitbucket.org/syb-devs/goth/app"
 	"bitbucket.org/syb-devs/goth/database"
 
-	jwt "github.com/dgrijalva/jwt-go"
+	jwt "gopkg.in/dgrijalva/jwt-go.v2"
 )
 
 var (
