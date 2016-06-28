@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"strings"
 
-	"bitbucket.org/syb-devs/goth/app"
+	jwt "github.com/dgrijalva/jwt-go"
 
-	"github.com/dgrijalva/jwt-go"
+	"bitbucket.org/syb-devs/goth/app"
 )
 
 // A function called whenever an error is encountered
