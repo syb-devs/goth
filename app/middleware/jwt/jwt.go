@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	jwt "github.com/dgrijalva/jwt-go"
+	jwt "gopkg.in/dgrijalva/jwt-go.v2"
 
 	"bitbucket.org/syb-devs/goth/app"
 )
