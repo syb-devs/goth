@@ -68,6 +68,11 @@ func (c *Conn) Map() *database.ResourceMap {
 	return c.resMap
 }
 
+// Interface returns the raw database connection as an empty interface
+func (c *Conn) Interface() interface{} {
+	return c.Database
+}
+
 // Resource implements the Resource interface for MongoDB
 type Resource struct {
 	ID                bson.ObjectId `bson:"_id" json:"id"`

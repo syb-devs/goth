@@ -8,6 +8,7 @@ type Connection interface {
 	Connect(ConnectionParams) error
 	Close() error
 	Copy() Connection
+	Interface() interface{}
 }
 
 // Repository is an interface implemented by database repositories
