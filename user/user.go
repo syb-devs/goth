@@ -6,7 +6,7 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	"bitbucket.org/syb-devs/goth/database"
+	"github.com/syb-devs/goth/database"
 )
 
 var (

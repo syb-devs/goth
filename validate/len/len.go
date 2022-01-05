@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"unicode/utf8"
 
-	"bitbucket.org/syb-devs/goth/validate"
-	"bitbucket.org/syb-devs/goth/validate/internal"
+	"github.com/syb-devs/goth/validate"
+	"github.com/syb-devs/goth/validate/internal"
 )
 
 func init() {
@@ -15,7 +15,7 @@ func init() {
 }
 
 // ErrParamCount is returned when the number of rule parameters does not match the expected
-var ErrParamCount = errors.New("This rule needs two mandatory params, operator and value")
+var ErrParamCount = errors.New("this rule needs two mandatory params, operator and value")
 
 // rule struct holds Validate() method to satisfy the Validator interface.
 type rule struct{}
@@ -63,11 +63,11 @@ func (r *rule) Validate(data interface{}, field string, params []string, namedPa
 		ok = length < requiredLength
 		opLiteral = "lower than, or equal to"
 	default:
-		return nil, errors.New("Invalid operator")
+		return nil, errors.New("invalid operator")
 	}
 
 	if !ok {
-		errorInput = fmt.Errorf("The field %s should have a length %s %d. Actual length: %d", field, opLiteral, requiredLength, length)
+		errorInput = fmt.Errorf("the field %s should have a length %s %d. Actual length: %d", field, opLiteral, requiredLength, length)
 		return
 	}
 	return

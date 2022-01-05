@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"runtime/debug"
 
-	"bitbucket.org/syb-devs/goth/app"
+	"github.com/syb-devs/goth/app"
 )
 
 // New returns a timer middleware function

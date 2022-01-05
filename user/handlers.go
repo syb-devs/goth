@@ -3,9 +3,9 @@ package user
 import (
 	"errors"
 
-	"bitbucket.org/syb-devs/goth/app"
-	"bitbucket.org/syb-devs/goth/auth/jwt"
-	"bitbucket.org/syb-devs/goth/database"
+	"github.com/syb-devs/goth/app"
+	"github.com/syb-devs/goth/auth/jwt"
+	"github.com/syb-devs/goth/database"
 )
 
 var (

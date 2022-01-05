@@ -5,7 +5,7 @@ import (
 	"io"
 	"net/http"
 
-	"bitbucket.org/syb-devs/goth/app"
+	"github.com/syb-devs/goth/app"
 )
 
 type bufferedWriter struct {

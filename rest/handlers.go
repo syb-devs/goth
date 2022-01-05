@@ -7,8 +7,8 @@ import (
 	"reflect"
 	"strconv"
 
-	"bitbucket.org/syb-devs/goth/app"
-	"bitbucket.org/syb-devs/goth/database"
+	"github.com/syb-devs/goth/app"
+	"github.com/syb-devs/goth/database"
 )
 
 const (

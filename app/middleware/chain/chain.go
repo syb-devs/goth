@@ -1,7 +1,7 @@
 package chain
 
 import (
-	"bitbucket.org/syb-devs/goth/app"
+	"github.com/syb-devs/goth/app"
 )
 
 // Chain is an ordered collection of Middlewares

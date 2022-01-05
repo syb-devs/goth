@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"bitbucket.org/syb-devs/goth/database"
+	"github.com/syb-devs/goth/database"
 )
 
 type User struct {

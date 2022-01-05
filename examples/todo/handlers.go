@@ -1,7 +1,7 @@
 package main
 
 import (
-	"bitbucket.org/syb-devs/goth/app"
+	"github.com/syb-devs/goth/app"
 )
 
 func rootHandler(ctx *app.Context) error {

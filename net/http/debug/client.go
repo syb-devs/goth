@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 
-	"bitbucket.org/syb-devs/goth/log"
+	"github.com/syb-devs/goth/log"
 )
 
 // New allocates and returns a debug.Client

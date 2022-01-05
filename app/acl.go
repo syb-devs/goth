@@ -1,7 +1,7 @@
 package app
 
 import (
-	db "bitbucket.org/syb-devs/goth/database"
+	db "github.com/syb-devs/goth/database"
 )
 
 // ResourceAccessChecker interface is used for abstracting access control over resources

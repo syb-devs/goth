@@ -4,9 +4,9 @@ import (
 	"io"
 	"net/http"
 
-	"bitbucket.org/syb-devs/goth/database"
-	"bitbucket.org/syb-devs/goth/encoding"
-	"bitbucket.org/syb-devs/goth/kv"
+	"github.com/syb-devs/goth/database"
+	"github.com/syb-devs/goth/encoding"
+	"github.com/syb-devs/goth/kv"
 )
 
 // CtxGenHTTP is a function that generates contexts from a pair

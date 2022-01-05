@@ -1,7 +1,7 @@
 package user
 
 import (
-	"bitbucket.org/syb-devs/goth/app"
+	"github.com/syb-devs/goth/app"
 )
 
 func init() {

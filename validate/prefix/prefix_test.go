@@ -3,9 +3,9 @@ package prefix_test
 import (
 	"testing"
 
-	"bitbucket.org/syb-devs/goth/validate"
-	"bitbucket.org/syb-devs/goth/validate/internal"
-	"bitbucket.org/syb-devs/goth/validate/prefix"
+	"github.com/syb-devs/goth/validate"
+	"github.com/syb-devs/goth/validate/internal"
+	"github.com/syb-devs/goth/validate/prefix"
 )
 
 var findErrors = internal.FindErrors

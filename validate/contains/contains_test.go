@@ -3,9 +3,9 @@ package contains_test
 import (
 	"testing"
 
-	"bitbucket.org/syb-devs/goth/validate"
-	"bitbucket.org/syb-devs/goth/validate/contains"
-	"bitbucket.org/syb-devs/goth/validate/internal"
+	"github.com/syb-devs/goth/validate"
+	"github.com/syb-devs/goth/validate/contains"
+	"github.com/syb-devs/goth/validate/internal"
 )
 
 var findErrors = internal.FindErrors

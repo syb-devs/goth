@@ -3,7 +3,7 @@ package email_test
 import (
 	"testing"
 
-	"bitbucket.org/syb-devs/goth/validate/email"
+	"github.com/syb-devs/goth/validate/email"
 )
 
 func TestEmailRegex(t *testing.T) {

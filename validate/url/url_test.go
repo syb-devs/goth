@@ -3,7 +3,7 @@ package url_test
 import (
 	"testing"
 
-	"bitbucket.org/syb-devs/goth/validate/url"
+	"github.com/syb-devs/goth/validate/url"
 )
 
 func TestURLRegex(t *testing.T) {

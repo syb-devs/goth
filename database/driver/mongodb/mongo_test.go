@@ -3,7 +3,7 @@ package mongodb_test
 import (
 	"testing"
 
-	"bitbucket.org/syb-devs/goth/database/driver/mongodb"
+	"github.com/syb-devs/goth/database/driver/mongodb"
 )
 
 func TestResourceBelongsTo(t *testing.T) {

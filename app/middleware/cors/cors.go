@@ -27,7 +27,7 @@ import (
 	"strconv"
 	"strings"
 
-	"bitbucket.org/syb-devs/goth/app"
+	"github.com/syb-devs/goth/app"
 )
 
 // Options is a configuration container to setup the CORS middleware.

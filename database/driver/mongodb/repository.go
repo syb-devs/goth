@@ -3,7 +3,7 @@ package mongodb
 import (
 	"reflect"
 
-	"bitbucket.org/syb-devs/goth/database"
+	"github.com/syb-devs/goth/database"
 
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"

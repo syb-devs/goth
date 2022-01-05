@@ -1,8 +1,8 @@
 package main
 
 import (
-	"bitbucket.org/syb-devs/goth/database/driver/mongodb"
-	"bitbucket.org/syb-devs/goth/user"
+	"github.com/syb-devs/goth/database/driver/mongodb"
+	"github.com/syb-devs/goth/user"
 
 	"gopkg.in/mgo.v2/bson"
 )

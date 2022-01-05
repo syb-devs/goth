@@ -3,7 +3,7 @@ package mongodb
 import (
 	"testing"
 
-	"bitbucket.org/syb-devs/goth/database"
+	"github.com/syb-devs/goth/database"
 
 	"gopkg.in/mgo.v2/bson"
 )

@@ -9,7 +9,7 @@ import (
 
 	jwt "gopkg.in/dgrijalva/jwt-go.v2"
 
-	"bitbucket.org/syb-devs/goth/app"
+	"github.com/syb-devs/goth/app"
 )
 
 // A function called whenever an error is encountered

@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"bitbucket.org/syb-devs/goth/validate"
+	"github.com/syb-devs/goth/validate"
 )
 
 func TestValidate(t *testing.T) {

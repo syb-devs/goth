@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"regexp"
 
-	"bitbucket.org/syb-devs/goth/validate/internal"
+	"github.com/syb-devs/goth/validate/internal"
 )
 
 // Rule is a helper for other rules that are based on regular expressions

@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"bitbucket.org/syb-devs/goth/validate"
+	"github.com/syb-devs/goth/validate"
 )
 
 var ErrUnsupportedType = errors.New("Unsupported type for rule")

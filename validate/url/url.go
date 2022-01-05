@@ -3,8 +3,8 @@ package url
 import (
 	"regexp"
 
-	"bitbucket.org/syb-devs/goth/validate"
-	regexpval "bitbucket.org/syb-devs/goth/validate/regexp"
+	"github.com/syb-devs/goth/validate"
+	regexpval "github.com/syb-devs/goth/validate/regexp"
 )
 
 // Regexp is the regular expression used to validate URL's

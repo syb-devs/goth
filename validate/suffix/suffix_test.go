@@ -3,9 +3,9 @@ package suffix_test
 import (
 	"testing"
 
-	"bitbucket.org/syb-devs/goth/validate"
-	"bitbucket.org/syb-devs/goth/validate/internal"
-	"bitbucket.org/syb-devs/goth/validate/suffix"
+	"github.com/syb-devs/goth/validate"
+	"github.com/syb-devs/goth/validate/internal"
+	"github.com/syb-devs/goth/validate/suffix"
 )
 
 var findErrors = internal.FindErrors

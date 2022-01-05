@@ -3,7 +3,7 @@ package timer
 import (
 	"time"
 
-	"bitbucket.org/syb-devs/goth/app"
+	"github.com/syb-devs/goth/app"
 )
 
 // New returns a timer middleware function

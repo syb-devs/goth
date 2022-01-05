@@ -4,9 +4,9 @@ import (
 	"errors"
 	"testing"
 
-	"bitbucket.org/syb-devs/goth/validate"
-	"bitbucket.org/syb-devs/goth/validate/internal"
-	"bitbucket.org/syb-devs/goth/validate/len"
+	"github.com/syb-devs/goth/validate"
+	"github.com/syb-devs/goth/validate/internal"
+	"github.com/syb-devs/goth/validate/len"
 )
 
 var findErrors = internal.FindErrors
@@ -32,7 +32,7 @@ func TestLen(t *testing.T) {
 			}{
 				Name: "Jon",
 			},
-			logicErr: errors.New("strconv.ParseInt: parsing \"x\": invalid syntax"),
+			logicErr: errors.New("strconv.Atoi: parsing \"x\": invalid syntax"),
 		},
 		{
 			input: struct {
@@ -64,7 +64,7 @@ func TestLen(t *testing.T) {
 			}{
 				Name: "Johnny",
 			},
-			errorPatterns: map[string][]string{"Name": []string{"The field Name should have a length equal to 3. Actual length: 6"}},
+			errorPatterns: map[string][]string{"Name": {"The field Name should have a length equal to 3. Actual length: 6"}},
 		},
 		{
 			input: struct {
@@ -80,7 +80,7 @@ func TestLen(t *testing.T) {
 			}{
 				Name: "Johnny",
 			},
-			errorPatterns: map[string][]string{"Name": []string{"Invalid operator"}},
+			errorPatterns: map[string][]string{"Name": {"Invalid operator"}},
 		},
 		{
 			input: struct {
@@ -88,7 +88,7 @@ func TestLen(t *testing.T) {
 			}{
 				Name: "Jon",
 			},
-			errorPatterns: map[string][]string{"Name": []string{"The field Name should have a length greater than 3. Actual length: 3"}},
+			errorPatterns: map[string][]string{"Name": {"The field Name should have a length greater than 3. Actual length: 3"}},
 		},
 	}
 

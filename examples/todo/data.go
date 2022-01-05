@@ -1,9 +1,9 @@
 package main
 
 import (
-	"bitbucket.org/syb-devs/goth/app"
-	"bitbucket.org/syb-devs/goth/database"
-	"bitbucket.org/syb-devs/goth/log"
+	"github.com/syb-devs/goth/app"
+	"github.com/syb-devs/goth/database"
+	"github.com/syb-devs/goth/log"
 
 	"gopkg.in/mgo.v2/bson"
 )

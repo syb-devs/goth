@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"time"
 
-	"bitbucket.org/syb-devs/goth/app"
-	"bitbucket.org/syb-devs/goth/database"
+	"github.com/syb-devs/goth/app"
+	"github.com/syb-devs/goth/database"
 
 	jwt "gopkg.in/dgrijalva/jwt-go.v2"
 )

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"reflect"
 
-	"bitbucket.org/syb-devs/goth/validate"
-	"bitbucket.org/syb-devs/goth/validate/internal"
+	"github.com/syb-devs/goth/validate"
+	"github.com/syb-devs/goth/validate/internal"
 )
 
 func init() {

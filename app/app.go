@@ -6,10 +6,10 @@ import (
 	"os"
 	"sync"
 
-	"bitbucket.org/syb-devs/goth/database"
-	"bitbucket.org/syb-devs/goth/encoding/json"
-	"bitbucket.org/syb-devs/goth/kv"
-	"bitbucket.org/syb-devs/goth/log"
+	"github.com/syb-devs/goth/database"
+	"github.com/syb-devs/goth/encoding/json"
+	"github.com/syb-devs/goth/kv"
+	"github.com/syb-devs/goth/log"
 )
 
 // App represents the main application
