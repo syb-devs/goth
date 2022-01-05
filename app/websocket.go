@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 
-	"bitbucket.org/syb-devs/goth/database"
+	"github.com/syb-devs/goth/database"
 
 	"golang.org/x/net/websocket"
 )

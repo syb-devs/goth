@@ -3,7 +3,7 @@ package app
 import (
 	"net/http"
 
-	"bitbucket.org/syb-devs/goth/database"
+	"github.com/syb-devs/goth/database"
 )
 
 // Context represents the isolated context for one request

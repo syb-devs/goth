@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"time"
 
-	"bitbucket.org/syb-devs/goth/app"
-	"bitbucket.org/syb-devs/goth/database"
-	"bitbucket.org/syb-devs/goth/rest"
+	"github.com/syb-devs/goth/app"
+	"github.com/syb-devs/goth/database"
+	"github.com/syb-devs/goth/rest"
 )
 
 var (

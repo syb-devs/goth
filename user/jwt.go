@@ -4,8 +4,8 @@ import (
 	"log"
 	"time"
 
-	"bitbucket.org/syb-devs/goth/app"
 	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/syb-devs/goth/app"
 )
 
 func init() {

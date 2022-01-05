@@ -1,8 +1,8 @@
 package user
 
 import (
-	"bitbucket.org/syb-devs/goth/database"
-	"bitbucket.org/syb-devs/goth/database/driver/mongodb"
+	"github.com/syb-devs/goth/database"
+	"github.com/syb-devs/goth/database/driver/mongodb"
 	"github.com/syb-devs/gotools/auth"
 )
 

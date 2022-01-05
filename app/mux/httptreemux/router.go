@@ -3,7 +3,7 @@ package httptreemux
 import (
 	"net/http"
 
-	"bitbucket.org/syb-devs/goth/app"
+	"github.com/syb-devs/goth/app"
 
 	"github.com/dimfeld/httptreemux"
 	"github.com/gorilla/context"

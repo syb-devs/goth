@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"os"
 
-	"bitbucket.org/syb-devs/goth/app"
-	"bitbucket.org/syb-devs/goth/app/mux/httptreemux"
-	"bitbucket.org/syb-devs/goth/database"
-	"bitbucket.org/syb-devs/goth/database/driver/mongodb"
-	_ "bitbucket.org/syb-devs/goth/user"
+	"github.com/syb-devs/goth/app"
+	"github.com/syb-devs/goth/app/mux/httptreemux"
+	"github.com/syb-devs/goth/database"
+	"github.com/syb-devs/goth/database/driver/mongodb"
+	_ "github.com/syb-devs/goth/user"
 
 	// jwt "github.com/auth0/go-jwt-middleware"
 	"github.com/rs/cors"

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"bitbucket.org/syb-devs/goth/app"
-	"bitbucket.org/syb-devs/goth/database"
+	"github.com/syb-devs/goth/app"
+	"github.com/syb-devs/goth/database"
 )
 
 // ResourceHandler interface represents the HTTP interface for CRUD operations

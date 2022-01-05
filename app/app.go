@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"sync"
 
-	"bitbucket.org/syb-devs/goth/database"
+	"github.com/syb-devs/goth/database"
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/context"
